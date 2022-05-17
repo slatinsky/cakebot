@@ -5,3 +5,4 @@ max_cake_year = 300
 [discord]
 api_key = 
 allowed_channel_ids = []
+command_prefix = !

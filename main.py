@@ -37,6 +37,8 @@ SLADA_UUID = "ec8d8033fbd148419817dc29227ed555" # TEST UUID
 
 ALLOWED_CHANNEL_IDS = json.loads(configParser.get("discord","allowed_channel_ids"))
 
+COMMAND_PREFIX = configParser.get('discord', 'command_prefix')
+
 if len(ALLOWED_CHANNEL_IDS) == 0:
 	print("No allowed channel IDs found in config.ini")
 	exit()
@@ -64,6 +66,26 @@ def get_commit_hash():
 
 def get_commit_time():
 	return os.popen('git show -s --format="%ci"').read().strip()
+
+def get_commit_index():
+	count = 100 + int(os.popen('git rev-list --count HEAD').read().strip())
+	if git_unsaved_changes():
+		return count + 1
+	return count
+
+def git_unsaved_changes():
+	return len(os.popen('git diff-files').read().strip()) > 0
+
+def git_are_changes_ready_to_commit():
+	return os.system('git diff-index --quiet HEAD --') == 0
+
+if git_unsaved_changes():
+	BETA = " BETA"
+else:
+	BETA = ""
+VERSION_STRING = f"Bot version{BETA} {get_commit_index()} ({get_commit_hash()}, {get_commit_time()})"
+
+print(VERSION_STRING)
 
 # def get_commit_date():
 # 	return get_commit_time().split(' ')[0]
@@ -1057,7 +1079,7 @@ cakes_obj = Cakes()
 # print("out:", InventoryImporter().offer_cakes("taftaf1"))
 # exit(0)
 
-bot = commands.Bot(command_prefix="!", help_command=None)
+bot = commands.Bot(command_prefix=COMMAND_PREFIX, help_command=None)
 
 
 @bot.event
@@ -1188,8 +1210,8 @@ async def ah(ctx, name=None):
 async def version(ctx, name=None):
 	if await is_dm(ctx):
 		return
-
-	await ctx.send("Bot version " + get_commit_hash() + " (" + get_commit_time() + ")")
+	
+	await ctx.send(VERSION_STRING)
 
 
 @bot.command()
