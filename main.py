@@ -1,3 +1,4 @@
+from distutils.sysconfig import PREFIX
 from pprint import pprint
 
 import discord
@@ -1135,7 +1136,7 @@ async def on_ready():  # This function will be run by the discord library when t
 
 # @bot.command()
 # async def h(ctx):
-# 	await ctx.send("Available commands:\n!uuid Slada - returns UUID")
+# 	await ctx.send(f"Available commands:\n{COMMAND_PREFIX}uuid Slada - returns UUID")
 
 async def is_dm(ctx):
 	#print(ctx.author.id)
@@ -1197,7 +1198,7 @@ async def uc(ctx, mc_name=None):
 	if mc_name is not None:
 		await cakes_obj.analyze_undercuts(ctx, mc_name)
 	else:
-		await ctx.send("Invalid syntax, use !uc NAME")
+		await ctx.send(f"Invalid syntax, use {COMMAND_PREFIX}uc NAME")
 
 @bot.command()
 async def undercuts(ctx, mc_name=None):
@@ -1207,7 +1208,7 @@ async def undercuts(ctx, mc_name=None):
 	if mc_name is not None:
 		await cakes_obj.analyze_undercuts(ctx, mc_name)
 	else:
-		await ctx.send("Invalid syntax, use !undercuts NAME")
+		await ctx.send(f"Invalid syntax, use {COMMAND_PREFIX}undercuts NAME")
 
 
 
@@ -1239,7 +1240,7 @@ async def ah(ctx, name=None):
 	if name is not None:
 		await cakes_obj.auctions_ending_soon(ctx, name)
 	else:
-		await ctx.send("Invalid syntax, use !ah NAME")
+		await ctx.send(f"Invalid syntax, use {COMMAND_PREFIX}ah NAME")
 
 @bot.command()
 async def version(ctx, name=None):
@@ -1257,7 +1258,7 @@ async def tb(ctx, name=None):
 	if name is not None:
 		await cakes_obj.auctions_ending_soon(ctx, None, name)
 	else:
-		await ctx.send("Invalid syntax, use !bids NAME")
+		await ctx.send(f"Invalid syntax, use !bids NAME")
 
 
 @bot.command()
@@ -1265,7 +1266,7 @@ async def help(ctx):
 	if await is_dm(ctx):
 		return
 
-	help = """
+	help = f"""
 Deprecation warning:
 This cake bot is deprecated. That means, that I (Slada) am not playing the game anymore and I can't improve the bot. I will try to keep the bot online and do small bug fixes. I promise, that the bot will stay online at least till 2022-01-01.
 
@@ -1273,44 +1274,44 @@ Turquoise_Fish sadly isn't working on a replacement bot :(
 
 Available commands:
 ```
-!ah NAME
-!tb NAME
-!soon
-!bins
-!bins NAME_TO_EXCLUDE
-!top
-!col NAME
-!help
-!undercuts NAME
+{COMMAND_PREFIX}ah NAME
+{COMMAND_PREFIX}tb NAME
+{COMMAND_PREFIX}soon
+{COMMAND_PREFIX}bins
+{COMMAND_PREFIX}bins NAME_TO_EXCLUDE
+{COMMAND_PREFIX}top
+{COMMAND_PREFIX}col NAME
+{COMMAND_PREFIX}help
+{COMMAND_PREFIX}undercuts NAME
 ```
 
-```!ah NAME```-it allows you to quickly optimize your auctions, because only cheapest bin sells.
--bins in cheapest bins column don't include your bins (same as !bins NAME_TO_EXCLUDE command)
+```{COMMAND_PREFIX}ah NAME```-it allows you to quickly optimize your auctions, because only cheapest bin sells.
+-bins in cheapest bins column don't include your bins (same as {COMMAND_PREFIX}bins NAME_TO_EXCLUDE command)
 
-```!tb NAME```- shows auctions where player NAME is top bidder
+```{COMMAND_PREFIX}tb NAME```- shows auctions where player NAME is top bidder
 
-```!soon```-shows first 50 cakes ending soon
+```{COMMAND_PREFIX}soon```-shows first 50 cakes ending soon
 
-```!bins```-Analyses current bin prices
+```{COMMAND_PREFIX}bins```-Analyses current bin prices
 -Shows 5 cheapest bins
 -Shows name of the cheapest bin auctioneer
 
-```!bins NAME_TO_EXCLUDE```-Same as !bins without parameter, but it filters out you bins from specified player (you often don't need to see your bins)
+```{COMMAND_PREFIX}bins NAME_TO_EXCLUDE```-Same as {COMMAND_PREFIX}bins without parameter, but it filters out you bins from specified player (you often don't need to see your bins)
 
-```!top```-Shows current top bidder leaderboard
+```{COMMAND_PREFIX}top```-Shows current top bidder leaderboard
 -Shows players who currently sells the most amount of cakes in AH
 
-```!col NAME```-sky lea for cakes :)
+```{COMMAND_PREFIX}col NAME```-sky lea for cakes :)
 -shows online status, profile name, coins in purse, ah bids, special auctions bought/sold, collected unique cakes in the inventory, missing cakes and amount of cakes needed to complete the bag.
 -duplicate cakes in inventory are not shown.
 -to refresh inventory api, tell the player you are inspecting to revisit you.
 -shows pies too :)
 
-```!help```-shows this message
+```{COMMAND_PREFIX}help```-shows this message
 
-```!undercuts NAME```-shows better BIN offers that your worst BIN offer
+```{COMMAND_PREFIX}undercuts NAME```-shows better BIN offers that your worst BIN offer
 
-```!changelog```- see bot changes
+```{COMMAND_PREFIX}changelog```- see bot changes
 """
 	await ctx.send(help)
 
