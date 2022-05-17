@@ -25,6 +25,32 @@ import shelve
 
 nest_asyncio.apply()
 
+
+def split_message(msg):
+	"""
+	Split message to multiple messages if it is too long.
+	"""
+	
+	msgs = msg.split('\n')
+
+	# merge adjacent if total length is less than 2000
+	merged_msgs = []
+
+	adding_to_index = 0
+	for msg in msgs:
+		if len(merged_msgs) == 0:
+			merged_msgs.append(msg)
+			continue
+
+		if len(merged_msgs[adding_to_index]) + len(msg) < 1980:
+			merged_msgs[adding_to_index] += '\n' + msg
+		else:
+			merged_msgs.append(msg)
+			adding_to_index += 1
+
+	return merged_msgs
+
+
 import configparser
 configParser = configparser.RawConfigParser()
 configFilePath = r'config.ini'
@@ -770,9 +796,10 @@ class Cakes:
 				self.bin_cheapest_cakes[year] = year_cake_list_5_cheapest
 
 	async def split_and_send(this, ctx, msg):
-		span = 20
-		words = msg.split("\n")
-		splited = ["\n".join(words[i:i + span]) for i in range(0, len(words), span)]
+		# span = 20
+		# words = msg.split("\n")
+		splited = split_message(msg)
+		# splited = ["\n".join(words[i:i + span]) for i in range(0, len(words), span)]
 		# pprint(splited)
 		for split in splited:
 			# print(split + "\n")
