@@ -1,0 +1,7 @@
+config.ini
+.idea/
+__pycache__/
+auction/
+mcnames.bak
+mcnames.dat
+mcnames.dir
