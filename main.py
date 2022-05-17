@@ -663,7 +663,7 @@ class Cakes:
 					continue
 				if ah_dict['success']:
 					for auction in ah_dict['auctions']:
-						if 'New Year Cake' in auction['item_name'].strip():
+						if 'New Year Cake' in auction['item_name'].strip() and "bag" not in auction['item_name'].strip().lower():
 							# if auction['auctioneer'] != CONF['my_mc_details']['uuid']:
 							cake_auction_dict[auction['uuid']] = CakeAuction(auction)
 				else:
