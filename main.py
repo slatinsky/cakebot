@@ -105,6 +105,14 @@ def git_unsaved_changes():
 def git_are_changes_ready_to_commit():
 	return os.system('git diff-index --quiet HEAD --') == 0
 
+def git_get_commit_messages():
+	changes = os.popen('git log --pretty=format:"%s"').read().strip().split('\n')
+	for i in range(len(changes)):
+		changes[i] = f"v{len(changes) - i + 100}: {changes[i]}"
+
+	changes = '\n'.join(changes)
+	return changes
+
 if git_unsaved_changes():
 	BETA = " BETA"
 else:
@@ -1301,9 +1309,19 @@ Available commands:
 ```!help```-shows this message
 
 ```!undercuts NAME```-shows better BIN offers that your worst BIN offer
+
+```!changelog```- see bot changes
 """
 	await ctx.send(help)
 
+
+@bot.command()
+async def changelog(ctx, name=None):
+	if await is_dm(ctx):
+		return
+
+	await ctx.send(git_get_commit_messages())
+	
 
 # Run the discord bot
 bot.run(DISCORD_API_KEY)
