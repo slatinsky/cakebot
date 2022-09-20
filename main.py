@@ -243,10 +243,9 @@ def get_uuid_from_mc_name(name):
 def get_mc_name_from_uuid(uuid):
 	with shelve.open('mcnames') as mcnames:
 		if uuid not in mcnames:
-			url = 'https://api.mojang.com/user/profiles/' + uuid + '/names'
-
-			json_name = requests.get(url=url).json()
-			mcnames[uuid] = json_name[-1]['name']
+			data = requests.get("https://sessionserver.mojang.com/session/minecraft/profile/" + uuid).json()
+			name = data["name"]
+			mcnames[uuid] = name
 			print("Fetched name from mojang -", mcnames[uuid])
 		# time.sleep(0.1)
 
@@ -1265,6 +1264,7 @@ async def tb(ctx, name=None):
 async def help(ctx):
 	if await is_dm(ctx):
 		return
+	print("printing help")
 
 	help = f"""
 Deprecation warning:
