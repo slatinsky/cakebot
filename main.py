@@ -1273,7 +1273,7 @@ async def delcache(ctx, name=None):
 
 	# if mcnames.db exists, delete it
 	if os.path.exists("mcnames.db"):
-		delcache()
+		delete_database()
 		if os.path.exists("mcnames.db"):
 			await ctx.send("Failed to delete cache (mcnames.db)")
 		else:
