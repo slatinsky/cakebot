@@ -238,6 +238,12 @@ def get_uuid_from_mc_name(name):
 	url = 'https://api.mojang.com/users/profiles/minecraft/' + name
 	return requests.get(url=url).json()['id']
 
+def delete_database():
+	if os.path.exists('mcnames.db'):
+		# rename with timestamp
+		os.rename('mcnames.db', f'mcnames_{datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}.db')
+		print("mcnames.db deleted")
+
 
 # api limit 600 per 10 minutes = 1 per sec
 def get_mc_name_from_uuid(uuid):
@@ -1261,6 +1267,23 @@ async def tb(ctx, name=None):
 
 
 @bot.command()
+async def delcache(ctx, name=None):
+	if await is_dm(ctx):
+		return
+
+	# if mcnames.db exists, delete it
+	if os.path.exists("mcnames.db"):
+		delcache()
+		if os.path.exists("mcnames.db"):
+			await ctx.send("Failed to delete cache (mcnames.db)")
+		else:
+			await ctx.send(f"Deleted mcnames.db")
+	else:
+		await ctx.send("Cache (mcnames.db) does not exist!")
+
+
+
+@bot.command()
 async def help(ctx):
 	if await is_dm(ctx):
 		return
@@ -1311,6 +1334,7 @@ Available commands:
 
 ```{COMMAND_PREFIX}undercuts NAME```-shows better BIN offers that your worst BIN offer
 
+```{COMMAND_PREFIX}delcache```- deletes name cache
 ```{COMMAND_PREFIX}changelog```- see bot changes
 """
 	await ctx.send(help)
