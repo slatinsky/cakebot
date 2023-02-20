@@ -1,8 +1,8 @@
 [hypixel]
-api_key = 
+api_key = 671c6434-b116-11ed-afa1-0242ac120002
 max_cake_year = 300
 
 [discord]
-api_key = 
-allowed_channel_ids = []
+api_key = JHkjidhjfhjkdhj.euhdhfijehjrfeh.eiuhfjehfjh
+allowed_channel_ids = [765745682396335784]
 command_prefix = !
