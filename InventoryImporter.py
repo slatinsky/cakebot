@@ -175,18 +175,19 @@ class InventoryImporter:
 
     def get_current_skyblock_profile_uuid(self, uuid: str):
         data = requests.get(
-            "https://api.hypixel.net/skyblock/profiles?key=" + API_KEY + "&uuid=" + uuid).json()
+            "https://api.hypixel.net/skyblock/profiles?key=" + Utils.API_KEY + "&uuid=" + uuid).json()
 
         last_save = 0
+        stats = {}
 
         if 'profiles' in data:
             for profile in data['profiles']:
                 personal_profile = profile['members'][uuid]
                 # print("PROF", personal_profile)
                 # print(profile['cute_name'], personal_profile['last_save'])
-                if 'last_save' in personal_profile:
-                    if last_save < personal_profile['last_save']:
-                        last_save = personal_profile['last_save']
+                if 'last_save' in profile:
+                    if last_save < profile['last_save']:
+                        last_save = profile['last_save']
                         stats = self.get_stats(personal_profile, profile)
                     # print("found profile", stats['cute_name'])
                     else:
@@ -196,7 +197,6 @@ class InventoryImporter:
                     print("LAST SAVE NOT IN personal_profile")
         else:
             print('PROFILES NOT FOUND')
-            stats = {}
         # profile = data['profile']
         # personal_profile = data['profile']['members'][uuid]
         # stats = self.get_stats(data['profile'], profile)
