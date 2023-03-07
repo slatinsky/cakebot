@@ -1,8 +1,10 @@
 import os
 
+import discord
 import nest_asyncio
 import requests
-from discord.ext import commands
+from discord import app_commands
+# from discord.ext import commands
 
 import Utils
 from Cakes import Cakes
@@ -76,7 +78,11 @@ if not os.path.exists('auction'):
     os.makedirs('auction')
 
 cakes_obj = Cakes()
-bot = commands.Bot(command_prefix=Utils.COMMAND_PREFIX, help_command=None)
+intents = discord.Intents.default()
+intents.message_content = True
+client = discord.Client(intents=intents)
+# bot = commands.Bot(intents=intents)
+tree = app_commands.CommandTree(client)
 
 
 @bot.event
@@ -277,4 +283,4 @@ async def changelog(ctx, name=None):
 
 
 # Run the discord bot
-bot.run(Utils.DISCORD_API_KEY)
+client.run(Utils.DISCORD_API_KEY)
