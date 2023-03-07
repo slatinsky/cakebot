@@ -91,9 +91,10 @@ async def on_message(message):
     await bot.process_commands(message)
 
 
-@bot.event
+@client.event
 async def on_ready():  # This function will be run by the discord library when the bot has logged in
-    print("Logged in as " + bot.user.name)
+    await tree.sync()
+    print("Logged in as " + client.user.name)
 
 
 async def is_dm(ctx):
