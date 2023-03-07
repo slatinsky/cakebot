@@ -207,7 +207,6 @@ class InventoryImporter:
     # 	# print(current_profile, current_profile_uuid)
 
     def get_profile_details(self, mc_uuid: str, profile_uuid: str, ret_str=""):
-        global MAX_CAKE_YEAR
 
         ret_str += "\nInventory:\n"
         data = requests.get(
@@ -250,7 +249,7 @@ class InventoryImporter:
 
         not_owned_cakes = set()
 
-        for i in range(0, MAX_CAKE_YEAR):
+        for i in range(0, Utils.MAX_CAKE_YEAR):
             if i not in cake_set:
                 not_owned_cakes.add(i)
 
