@@ -1,9 +1,9 @@
 # Cake bot
 Discord bot to analyze new year cake market in Hypixel Skyblock.
 
-**Warning**: very old code that was made in `2020-08`! But most of it still works as of `2023-02-20`. Also I am not playing Skyblock anymore, so I won't be updating this bot. Updates relies on the community to make pull requests.
-
-**Warning2**: The library used doesn't support discord slash commands. You need to enable message content intent in the Discord developer portal.
+**Warnings**
+- very old code that was made in `2020-08`! But most of it still works as of `2023-02-20`. Also I am not playing Skyblock anymore, so I won't add new features to this bot - it relies on the community to make pull requests.
+- The library used doesn't support discord slash commands. You need to enable message content intent in the Discord developer portal.
 
 Tested with Python 3.10 on Raspberry Pi 4b. But should work on any Linux machine.
 
@@ -11,6 +11,24 @@ Tested with Python 3.10 on Raspberry Pi 4b. But should work on any Linux machine
 Look at the bottom of the `main.py` for a list of commands.
 
 ## Setup
+You can run the bot in a docker container or manually.
+
+- Manual setup is recommended if you want to develop the bot.
+- Docker setup is recommended for easy deployment.
+### Docker
+```bash
+git clone https://github.com/slatinsky/cakebot
+cd cakebot
+cp config.ini.example config.ini.prod
+nano config.ini.prod
+docker build -t cakebot .
+docker run -d --name cakebot cakebot
+```
+
+
+
+### Manual setup
+
 Make sure you have Python 3.10+ installed.
 
 ```bash
@@ -19,7 +37,7 @@ python3 --version
 
 Clone the repository:
 ```bash
-https://github.com/slatinsky/cakebot
+git clone https://github.com/slatinsky/cakebot
 ```
 
 Install required python dependencies from `requirements.txt`:
