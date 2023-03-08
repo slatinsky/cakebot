@@ -173,7 +173,7 @@ class InventoryImporter:
 
         return stats
 
-    def get_current_skyblock_profile_uuid(self, uuid: str):
+    def get_stats_from_uuid(self, uuid: str):
         data = requests.get(
             "https://api.hypixel.net/skyblock/profiles?key=" + Utils.API_KEY + "&uuid=" + uuid).json()
 
@@ -185,16 +185,12 @@ class InventoryImporter:
                 personal_profile = profile['members'][uuid]
                 # print("PROF", personal_profile)
                 # print(profile['cute_name'], personal_profile['last_save'])
-                if 'last_save' in profile:
-                    if last_save < profile['last_save']:
-                        last_save = profile['last_save']
-                        stats = self.get_stats(personal_profile, profile)
-                    # print("found profile", stats['cute_name'])
-                    else:
-                        pass
+                if profile['selected'] is True:
+                    stats = self.get_stats(personal_profile, profile)
+                    print(f"Found selected profile: {profile['cute_name']}")
                 # print("skipped profile")
                 else:
-                    print("LAST SAVE NOT IN personal_profile")
+                    print(f"Profile {profile['cute_name']} is not selected")
         else:
             print('PROFILES NOT FOUND')
         # profile = data['profile']
@@ -278,7 +274,7 @@ class InventoryImporter:
 
         try:
             mc_uuid = Utils.get_uuid_from_mc_name(self.mc_name)
-            stats = self.get_current_skyblock_profile_uuid(mc_uuid)
+            stats = self.get_stats_from_uuid(mc_uuid)
 
             print("stats:" + str(stats))
 
