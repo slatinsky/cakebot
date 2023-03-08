@@ -133,61 +133,100 @@ async def col(interaction, mc_name: str):
             await interaction.channel.send(f"```diff\n{msg}```")
 
 
-@bot.command()
-async def top(ctx):
-    if await is_dm(ctx):
+@tree.command()
+async def top(interaction):
+    """
+    Shows current top bidder leaderboard
+    and players who currently sell the most amount of cakes in AH
+    """
+    if await disallow_execute(interaction):
         return
+    await interaction.response.send_message("Loading...")
 
-    await ctx.send(cakes_obj.top(None))
-
-
-@bot.command()
-async def uc(ctx, mc_name=None):
-    if await is_dm(ctx):
-        return
-
-    if mc_name is not None:
-        await cakes_obj.analyze_undercuts(ctx, mc_name)
-    else:
-        await ctx.send(f"Invalid syntax, use {Utils.COMMAND_PREFIX}uc NAME")
+    await interaction.edit_original_response(content=cakes_obj.top())
 
 
-@bot.command()
-async def undercuts(ctx, mc_name=None):
-    if await is_dm(ctx):
+@tree.command()
+async def uc(interaction, mc_name: str):
+    """
+    See auctions where given player was undercut
+    """
+    if await disallow_execute(interaction):
         return
 
     if mc_name is not None:
-        await cakes_obj.analyze_undercuts(ctx, mc_name)
+        await cakes_obj.analyze_undercuts(interaction, mc_name)
     else:
-        await ctx.send(f"Invalid syntax, use {Utils.COMMAND_PREFIX}undercuts NAME")
+        await interaction.response.send_message(f"Invalid syntax, use {Utils.COMMAND_PREFIX}uc NAME")
 
 
-@bot.command()
-async def bins(ctx, mc_name=None):
-    if await is_dm(ctx):
+@tree.command()
+async def undercuts(interaction, mc_name: str):
+    """
+    See auctions where given player was undercut
+    """
+    if await disallow_execute(interaction):
         return
 
-    await cakes_obj.analyze_bin_prices(ctx, mc_name)
-
-
-@bot.command()
-async def soon(ctx):
-    if await is_dm(ctx):
-        return
-
-    await cakes_obj.auctions_ending_soon(ctx)
-
-
-@bot.command()
-async def ah(ctx, name=None):
-    if await is_dm(ctx):
-        return
-
-    if name is not None:
-        await cakes_obj.auctions_ending_soon(ctx, name)
+    if mc_name is not None:
+        await cakes_obj.analyze_undercuts(interaction, mc_name)
     else:
-        await ctx.send(f"Invalid syntax, use {Utils.COMMAND_PREFIX}ah NAME")
+        await interaction.response.send_message(f"Invalid syntax, use {Utils.COMMAND_PREFIX}undercuts NAME")
+
+
+@tree.command(name="bins")
+async def bins(interaction, name_to_exclude: str):
+    """
+    Analysed current bin prices and show 5 cheapest bins
+    """
+    if await disallow_execute(interaction):
+        return
+    await interaction.response.send_message("Loading...")
+
+    bins_data = await cakes_obj.analyze_bin_prices(interaction, name_to_exclude)
+    bins_msg = Utils.split_message(bins_data)
+    for msg in bins_msg:
+        # print(split + "\n")
+        await interaction.channel.send(f"```diff\n{msg}```")
+    await interaction.edit_original_response(content="BIN Overview:")
+
+
+@tree.command()
+async def soon(interaction):
+    """
+    Show all cake auctions that are ending soon
+    """
+    if await disallow_execute(interaction):
+        return
+
+    await interaction.response.send_message("Loading...")
+
+    soon_data = await cakes_obj.auctions_ending_soon(interaction)
+    soon_msg = Utils.split_message(msg=soon_data)
+    await interaction.edit_original_response(content=soon_msg[0])
+    soon_msg.pop(0)
+    for msg in soon_msg:
+        await interaction.channel.send(f"```diff\n{msg}```")
+
+
+@tree.command()
+async def ah(interaction, mc_name: str):
+    """
+    Show Cake Auctions for given player name
+    """
+    if await disallow_execute(interaction):
+        return
+
+    if mc_name is not None:
+        await interaction.response.send_message("Loading...")
+        ah_data = await cakes_obj.auctions_ending_soon(interaction, mc_name)
+        ah_msgs = Utils.split_message(ah_data)
+        for msg in ah_msgs:
+            await interaction.channel.send(f"```diff\n{msg}```")
+        await interaction.edit_original_response(content=f"AH data for {mc_name}:")
+
+    else:
+        await interaction.response.send_message(f"Invalid syntax, use /ah NAME")
 
 
 @tree.command()
@@ -202,36 +241,48 @@ async def version(interaction):
     await interaction.response.send_message(content=None, embed=version_embed)
 
 
-@bot.command()
-async def tb(ctx, name=None):
-    if await is_dm(ctx):
+@tree.command()
+async def tb(interaction, mc_name: str):
+    """
+    Show auctions where given player is top bidder
+    """
+    if await disallow_execute(interaction):
         return
 
-    if name is not None:
-        await cakes_obj.auctions_ending_soon(ctx, None, name)
+    await interaction.response.send_message("Loading...")
+
+    if mc_name is not None:
+        tb_data = await cakes_obj.auctions_ending_soon(interaction, None, mc_name)
+        await interaction.edit_original_response(content=f"```diff\n{tb_data}```")
     else:
-        await ctx.send(f"Invalid syntax, use !bids NAME")
+        await interaction.response.send_message(f"Invalid syntax, use /tb NAME")
 
 
-@bot.command()
-async def delcache(ctx, name=None):
-    if await is_dm(ctx):
+@tree.command()
+async def delcache(interaction):
+    """
+    Used to refresh cached mc names
+    """
+    if await disallow_execute(interaction):
         return
 
     # if mcnames.db exists, delete it
     if os.path.exists("mcnames.db"):
         Utils.delete_database()
         if os.path.exists("mcnames.db"):
-            await ctx.send("Failed to delete cache (mcnames.db)")
+            await interaction.response.send_message("Failed to delete cache (mcnames.db)")
         else:
-            await ctx.send(f"Deleted mcnames.db")
+            await interaction.response.send_message(f"Deleted mcnames.db")
     else:
-        await ctx.send("Cache (mcnames.db) does not exist!")
+        await interaction.response.send_message("Cache (mcnames.db) does not exist!")
 
 
-@bot.command()
-async def help(ctx):
-    if await is_dm(ctx):
+@tree.command()
+async def help(interaction):
+    """
+    See what this bot is able to do and how
+    """
+    if await disallow_execute(interaction):
         return
     print("printing help")
 
@@ -283,15 +334,18 @@ Available commands:
 ```{Utils.COMMAND_PREFIX}delcache```- deletes name cache
 ```{Utils.COMMAND_PREFIX}changelog```- see bot changes
 """
-    await ctx.send(help)
+    await interaction.response.send_message(help)
 
 
-@bot.command()
-async def changelog(ctx, name=None):
-    if await is_dm(ctx):
+@tree.command()
+async def changelog(interaction):
+    """
+    See what has changed in this bot latest
+    """
+    if await disallow_execute(interaction):
         return
 
-    await ctx.send(git_get_commit_messages())
+    await interaction.response.send_message(git_get_commit_messages())
 
 
 # Run the discord bot
