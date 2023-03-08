@@ -140,16 +140,6 @@ class Cakes:
 
                 self.bin_cheapest_cakes[year] = year_cake_list_5_cheapest
 
-    async def split_and_send(self, ctx, msg):
-        # span = 20
-        # words = msg.split("\n")
-        splited = Utils.split_message(msg)
-        # splited = ["\n".join(words[i:i + span]) for i in range(0, len(words), span)]
-        # pprint(splited)
-        for split in splited:
-            # print(split + "\n")
-            await ctx.send(f"```diff\n{split}```")
-
     async def analyze_bin_prices(self, ctx, ignore_name=None):
         self.bin_prices_to_var(ignore_name)
 
@@ -169,48 +159,7 @@ class Cakes:
                                             Utils.get_mc_name_from_uuid(
                                                 self.bin_cheapest_cakes[year][0][2].auctioneer_uuid)])
 
-        await self.split_and_send(ctx, ret_str)
-        # span = 20
-        # words = ret_str.split("\n")
-        # splited = ["\n".join(words[i:i+span]) for i in range(0, len(words), span)]
-        # # pprint(splited)
-        # for split in splited:
-        # 	# print(split + "\n")
-        # 	await ctx.send(f"```{split}```")
-
-        # for year in range(max_year_found_in_dict + 1):
-        #
-        # 	count_all = "-----"   ,
-        # 	if year in cake_years:
-        # 		min_p = 999999999
-        # 		max_p = -1
-        # 		for cake in cake_years[year]:
-        # 			if cake.price < min_p:
-        # 				cheapest_bins[cake.year] = cake
-        #
-        # 			min_p = min(min_p, cake.price)
-        # 			max_p = max(max_p, cake.price)
-        #
-        # 		if year in cake_counts:
-        # 			count_all = cake_counts[year]
-        #
-        # 		ret_str += table.print_row([year, str(len(cake_years[year])) + " / " + str(count_all), min_p, max_p, "/ah " +  get_mc_name_from_uuid(cheapest_bins[year].auctioneer_uuid)])
-        # else:
-        # 	ret_str += table.print_row([year, "-----", count_all])
-
-        if ctx is None:
-            print(ret_str)
-
-    # else:
-    # 	span = 20
-    # 	words = ret_str.split("\n")
-    # 	splited = ["\n".join(words[i:i+span]) for i in range(0, len(words), span)]
-    # 	# pprint(splited)
-    # 	for split in splited:
-    # 		# print(split + "\n")
-    # 		await ctx.send(f"```{split}```")
-
-    # return f"```{ret_str}```"
+        return ret_str
 
     async def analyze_undercuts(self, ctx, name=None):
         if name is not None:
@@ -267,7 +216,7 @@ class Cakes:
         # for ends_in, cake_year, cake_id, cake in name_owned_cakes:
         # 	print(cake_year)
 
-        await self.split_and_send(ctx, ret_str)
+        return ret_str
 
     # print(ret_str)
     #
@@ -354,12 +303,12 @@ class Cakes:
             ret_str += table.print_row(row_to_print)
         ret_str += "\n"
 
-        await self.split_and_send(ctx, ret_str)
+        return ret_str
 
     # print(ret_str)
     # return f"```{ret_str}```"
 
-    def top(self, ctx=None):
+    def top(self):
         ret_str = ""
 
         if not self.try_to_update_ah():
