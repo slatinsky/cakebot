@@ -85,12 +85,6 @@ client = discord.Client(intents=intents)
 tree = app_commands.CommandTree(client)
 
 
-@bot.event
-async def on_message(message):
-    print(message.content)
-    await bot.process_commands(message)
-
-
 @client.event
 async def on_ready():  # This function will be run by the discord library when the bot has logged in
     await tree.sync()
