@@ -111,15 +111,16 @@ async def disallow_execute(interaction):
         return False
 
 
-@bot.command()
-async def col(ctx, mc_name):
-    if await is_dm(ctx):
-        return
+@tree.command(name="col")
+async def col(interaction, mc_name: str):
+    """
+    Displays information over specific player
+    """
+    if await disallow_execute(interaction):
+        return True
+
     msg = InventoryImporter().offer_cakes(mc_name)
-    if len(msg) > 1995:
-        await cakes_obj.split_and_send(ctx, msg.replace('```', ''))
-    else:
-        await ctx.send(msg)
+    await interaction.response.send_message(content=msg)
 
 
 @bot.command()
