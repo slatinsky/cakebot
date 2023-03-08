@@ -91,19 +91,21 @@ async def on_ready():  # This function will be run by the discord library when t
     print("Logged in as " + client.user.name)
 
 
-async def is_dm(ctx):
+async def disallow_execute(interaction):
     # print(ctx.author.id)
     deny_author_ids = []  # copy author id from discord
 
-    if ctx.author.id in deny_author_ids:
+    if interaction.user.id in deny_author_ids:
+        await interaction.response.send_message("You are not allowed to use this bot.", ephemeral=True)
         return True  # do not allow commands from these users
 
-    if ctx.message.channel.id not in Utils.ALLOWED_CHANNEL_IDS:
+    if interaction.channel_id not in Utils.ALLOWED_CHANNEL_IDS:
         print("not in allowed channel")
+        await interaction.response.send_message("This channel is not allowed for this bot.", ephemeral=True)
         return True  # not correct channel ID, ignore command
 
-    if ctx.guild is None:
-        await ctx.send("Don't be shy! Talk with me in bot-channel!")
+    if interaction.guild is None:
+        await interaction.send("Don't be shy! Talk with me in bot-channel!")
         return True
     else:
         return False
