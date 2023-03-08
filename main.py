@@ -190,12 +190,16 @@ async def ah(ctx, name=None):
         await ctx.send(f"Invalid syntax, use {Utils.COMMAND_PREFIX}ah NAME")
 
 
-@bot.command()
-async def version(ctx, name=None):
-    if await is_dm(ctx):
+@tree.command()
+async def version(interaction):
+    """
+    Display the bots current version
+    """
+    if await disallow_execute(interaction):
         return
 
-    await ctx.send(VERSION_STRING)
+    version_embed = discord.Embed(description=VERSION_STRING, title="Bot Version")
+    await interaction.response.send_message(content=None, embed=version_embed)
 
 
 @bot.command()
