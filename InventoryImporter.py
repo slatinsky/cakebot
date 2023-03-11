@@ -202,7 +202,7 @@ class InventoryImporter:
     #
     # 	# print(current_profile, current_profile_uuid)
 
-    def get_profile_details(self, mc_uuid: str, profile_uuid: str, ret_str=""):
+    def get_inventory_details(self, mc_uuid: str, profile_uuid: str, ret_str=""):
 
         ret_str += "\nInventory:\n"
         data = requests.get(
@@ -224,10 +224,11 @@ class InventoryImporter:
             if 'data' in current_member['personal_vault_contents']:
                 inventories.append(current_member['personal_vault_contents']['data'])
 
-        elif 'ender_chest_contents' in current_member:
-            ret_str += "Talisman bag not unlocked"
-            return ret_str
-        else:
+        if 'ender_chest_contents' in current_member:
+            if 'data' in current_member['ender_chest_contents']:
+                inventories.append(current_member['ender_chest_contents']['data'])
+        
+        if not inventories:
             ret_str += "This player does not have his inventory api enabled"
             return ret_str
 
@@ -303,7 +304,7 @@ class InventoryImporter:
             # 	return f"This player does not have his inventory api enabled\n"
             # else:
             if 'current_profile_uuid' in stats:
-                ret_str = self.get_profile_details(mc_uuid, stats['current_profile_uuid'], ret_str)
+                ret_str = self.get_inventory_details(mc_uuid, stats['current_profile_uuid'], ret_str)
             return ret_str
         except json.decoder.JSONDecodeError:
             return f"Hypixel api is offline or player not found :( Try again later"
