@@ -145,7 +145,7 @@ async def uc(interaction, mc_name: str):
     if mc_name is not None:
         await cakes_obj.analyze_undercuts(interaction, mc_name)
     else:
-        await interaction.response.send_message(f"Invalid syntax, use {Utils.COMMAND_PREFIX}uc NAME")
+        await interaction.response.send_message(f"Invalid syntax, use /uc NAME")
 
 
 @tree.command()
@@ -159,7 +159,7 @@ async def undercuts(interaction, mc_name: str):
     if mc_name is not None:
         await cakes_obj.analyze_undercuts(interaction, mc_name)
     else:
-        await interaction.response.send_message(f"Invalid syntax, use {Utils.COMMAND_PREFIX}undercuts NAME")
+        await interaction.response.send_message(f"Invalid syntax, use /undercuts NAME")
 
 
 @tree.command(name="bins")
@@ -282,45 +282,45 @@ Turquoise_Fish sadly isn't working on a replacement bot :(
 
 Available commands:
 ```
-{Utils.COMMAND_PREFIX}ah NAME
-{Utils.COMMAND_PREFIX}tb NAME
-{Utils.COMMAND_PREFIX}soon
-{Utils.COMMAND_PREFIX}bins
-{Utils.COMMAND_PREFIX}bins NAME_TO_EXCLUDE
-{Utils.COMMAND_PREFIX}top
-{Utils.COMMAND_PREFIX}col NAME
-{Utils.COMMAND_PREFIX}help
-{Utils.COMMAND_PREFIX}undercuts NAME
+/ah NAME
+/tb NAME
+/soon
+/bins
+/bins NAME_TO_EXCLUDE
+/top
+/col NAME
+/help
+/undercuts NAME
 ```
 
-```{Utils.COMMAND_PREFIX}ah NAME```-it allows you to quickly optimize your auctions, because only cheapest bin sells.
--bins in cheapest bins column don't include your bins (same as {Utils.COMMAND_PREFIX}bins NAME_TO_EXCLUDE command)
+```/ah NAME```-it allows you to quickly optimize your auctions, because only cheapest bin sells.
+-bins in cheapest bins column don't include your bins (same as /bins NAME_TO_EXCLUDE command)
 
-```{Utils.COMMAND_PREFIX}tb NAME```- shows auctions where player NAME is top bidder
+```/tb NAME```- shows auctions where player NAME is top bidder
 
-```{Utils.COMMAND_PREFIX}soon```-shows first 50 cakes ending soon
+```/soon```-shows first 50 cakes ending soon
 
-```{Utils.COMMAND_PREFIX}bins```-Analyses current bin prices
+```/bins```-Analyses current bin prices
 -Shows 5 cheapest bins
 -Shows name of the cheapest bin auctioneer
 
-```{Utils.COMMAND_PREFIX}bins NAME_TO_EXCLUDE```-Same as {Utils.COMMAND_PREFIX}bins without parameter, but it filters out you bins from specified player (you often don't need to see your bins)
+```/bins NAME_TO_EXCLUDE```-Same as /bins without parameter, but it filters out you bins from specified player (you often don't need to see your bins)
 
-```{Utils.COMMAND_PREFIX}top```-Shows current top bidder leaderboard
+```/top```-Shows current top bidder leaderboard
 -Shows players who currently sells the most amount of cakes in AH
 
-```{Utils.COMMAND_PREFIX}col NAME```-sky lea for cakes :)
+```/col NAME```-sky lea for cakes :)
 -shows online status, profile name, coins in purse, ah bids, special auctions bought/sold, collected unique cakes in the inventory, missing cakes and amount of cakes needed to complete the bag.
 -duplicate cakes in inventory are not shown.
 -to refresh inventory api, tell the player you are inspecting to revisit you.
 -shows pies too :)
 
-```{Utils.COMMAND_PREFIX}help```-shows this message
+```/help```-shows this message
 
-```{Utils.COMMAND_PREFIX}undercuts NAME```-shows better BIN offers that your worst BIN offer
+```/undercuts NAME```-shows better BIN offers that your worst BIN offer
 
-```{Utils.COMMAND_PREFIX}delcache```- deletes name cache
-```{Utils.COMMAND_PREFIX}changelog```- see bot changes
+```/delcache```- deletes name cache
+```/changelog```- see bot changes
 """
     await interaction.response.send_message(help)
 
