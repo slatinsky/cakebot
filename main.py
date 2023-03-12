@@ -10,7 +10,10 @@ import Utils
 from Cakes import Cakes
 from InventoryImporter import InventoryImporter
 from utils import Config
+from utils import LogController
 
+log_controller = LogController.LogController()
+logger = log_controller.get_logger()
 
 nest_asyncio.apply()
 
@@ -340,4 +343,4 @@ async def changelog(interaction):
 
 
 # Run the discord bot
-client.run(Config.DISCORD_API_KEY)
+client.run(Config.DISCORD_API_KEY, log_handler=None)
