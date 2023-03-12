@@ -8,6 +8,7 @@ import nbt
 import requests
 
 import Utils
+import Config
 from TablePrint import TablePrint
 
 
@@ -176,7 +177,7 @@ class InventoryImporter:
 
     def get_stats_from_uuid(self, uuid: str):
         data = requests.get(
-            "https://api.hypixel.net/skyblock/profiles?key=" + Utils.API_KEY + "&uuid=" + uuid).json()
+            "https://api.hypixel.net/skyblock/profiles?key=" + Config.API_KEY + "&uuid=" + uuid).json()
 
         last_save = 0
         stats = {}
@@ -209,7 +210,7 @@ class InventoryImporter:
         pie_str = ""
 
         data = requests.get(
-            'https://api.hypixel.net/skyblock/profile?key=' + Utils.API_KEY + '&profile=' + profile_uuid).json()
+            'https://api.hypixel.net/skyblock/profile?key=' + Config.API_KEY + '&profile=' + profile_uuid).json()
         current_member = data['profile']['members'][mc_uuid]
 
         inventories = []
@@ -243,7 +244,7 @@ class InventoryImporter:
 
         not_owned_cakes = set()
 
-        for i in range(0, Utils.MAX_CAKE_YEAR):
+        for i in range(0, Config.MAX_CAKE_YEAR):
             if i not in cake_set:
                 not_owned_cakes.add(i)
 

@@ -9,17 +9,19 @@ from discord import app_commands
 import Utils
 from Cakes import Cakes
 from InventoryImporter import InventoryImporter
+from utils import Config
+
 
 nest_asyncio.apply()
 
-if len(Utils.ALLOWED_CHANNEL_IDS) == 0:
+if len(Config.ALLOWED_CHANNEL_IDS) == 0:
     print("No allowed channel IDs found in config.ini")
     exit()
 
 
 # verify if API_KEY is valid
 def verify_api_key():
-    r = requests.get('https://api.hypixel.net/player?key=' + Utils.API_KEY + '&uuid=' + Utils.SLADA_UUID)
+    r = requests.get('https://api.hypixel.net/player?key=' + Config.API_KEY + '&uuid=' + Config.SLADA_UUID)
     if r.status_code == 200:
         return True
     else:
@@ -99,7 +101,7 @@ async def disallow_execute(interaction):
         await interaction.response.send_message("You are not allowed to use this bot.", ephemeral=True)
         return True  # do not allow commands from these users
 
-    if interaction.channel_id not in Utils.ALLOWED_CHANNEL_IDS:
+    if interaction.channel_id not in Config.ALLOWED_CHANNEL_IDS:
         print("not in allowed channel")
         await interaction.response.send_message("This channel is not allowed for this bot.", ephemeral=True)
         return True  # not correct channel ID, ignore command
@@ -120,6 +122,7 @@ async def col(interaction, mc_name: str):
         return True
 
     await InventoryImporter().offer_cakes(mc_name, interaction)
+
 
 @tree.command()
 async def top(interaction):
@@ -337,4 +340,4 @@ async def changelog(interaction):
 
 
 # Run the discord bot
-client.run(Utils.DISCORD_API_KEY)
+client.run(Config.DISCORD_API_KEY)
