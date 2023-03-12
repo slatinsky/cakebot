@@ -8,7 +8,7 @@ import nbt
 import requests
 
 import Utils
-import Config
+from utils import Config
 from TablePrint import TablePrint
 
 

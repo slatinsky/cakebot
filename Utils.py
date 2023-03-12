@@ -8,6 +8,7 @@ import time
 import aiohttp
 import requests
 
+from utils import Config
 
 async def fetch_one_url(session, url, save_path=None):
     async with session.get(url) as response:
@@ -60,7 +61,7 @@ def download_auctions():
         os.remove('auction/' + filename)
 
     # print("Downloading page 0")
-    r = requests.get('https://api.hypixel.net/skyblock/auctions?key=' + API_KEY + '&page=0')
+    r = requests.get('https://api.hypixel.net/skyblock/auctions?key=' + Config.API_KEY + '&page=0')
     with open(r'auction/0.json', 'wb') as f:
         f.write(r.content)
     number_of_pages = get_number_of_pages()
@@ -73,7 +74,7 @@ def download_auctions():
     urls = []
     save_as = {}
     for page_number in range(1, number_of_pages):
-        url = 'https://api.hypixel.net/skyblock/auctions?key=' + API_KEY + '&page=' + str(page_number)
+        url = 'https://api.hypixel.net/skyblock/auctions?key=' + Config.API_KEY + '&page=' + str(page_number)
         urls.append(url)
         save_as[url] = r'auction/' + str(page_number) + '.json'
 
@@ -95,7 +96,7 @@ def is_player_online(mc_name):
         print("is_player_online - name changed, old name:", mc_name)
         return "name_not_found_or_changed"
 
-    url = 'https://api.hypixel.net/player?key=' + API_KEY + '&uuid=' + mc_uuid
+    url = 'https://api.hypixel.net/player?key=' + Config.API_KEY + '&uuid=' + mc_uuid
 
     try:
         json_player_stats = requests.get(url=url).json()
