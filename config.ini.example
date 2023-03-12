@@ -6,3 +6,11 @@ max_cake_year = 300
 api_key = JHkjidhjfhjkdhj.euhdhfijehjrfeh.eiuhfjehfjh
 allowed_channel_ids = [765745682396335784]
 command_prefix = !
+
+[logs]
+enable_logs = true
+# possible values: DEBUG, INFO, WARNING, ERROR
+log_level = INFO
+# max log size in MB
+max_log_size = 5
+backup_count = 3
