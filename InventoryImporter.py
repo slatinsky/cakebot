@@ -3,6 +3,7 @@ import io
 import json
 import re
 
+import discord
 import nbt
 import requests
 
@@ -202,15 +203,16 @@ class InventoryImporter:
     #
     # 	# print(current_profile, current_profile_uuid)
 
-    def get_inventory_details(self, mc_uuid: str, profile_uuid: str, ret_str=""):
+    def get_inventory_details(self, mc_uuid: str, profile_uuid: str):
 
-        ret_str += "\nInventory:\n"
+        inventory_embed = discord.Embed(title="Inventory", description="")
+        pie_str = ""
+
         data = requests.get(
             'https://api.hypixel.net/skyblock/profile?key=' + Utils.API_KEY + '&profile=' + profile_uuid).json()
         current_member = data['profile']['members'][mc_uuid]
 
         inventories = []
-        # print("\n\n\nget_profile_details current_member:", current_member, "\n\n\n")
         if 'talisman_bag' in current_member:
             inventories = [current_member['talisman_bag']['data'], current_member['ender_chest_contents']['data'],
                            current_member['inv_contents']['data']]
@@ -227,22 +229,17 @@ class InventoryImporter:
         if 'ender_chest_contents' in current_member:
             if 'data' in current_member['ender_chest_contents']:
                 inventories.append(current_member['ender_chest_contents']['data'])
-        
+
         if not inventories:
-            ret_str += "This player does not have his inventory api enabled"
-            return ret_str
+            inventory_embed.description += "This player does not have his inventory api enabled"
+            return
 
         cake_list = self.find_cakes_in_item_list(self.list_of_all_items_in_inventories(inventories))
         pie_list = self.find_pies_in_item_list(self.list_of_all_items_in_inventories(inventories))
 
-        # if len(cake_list) == 0:
-        # 	print("No cake was found in the inventory. Please enable api access (/sbmenu -> settings -> API settings -> API: inventory - click to enable). After turning on api, go to hub and visit me again please")
-        # 	return
-
         cake_set = set(cake_list)
-        # print("Found cakes verbose", sorted(list(cake_set)))
 
-        ret_str += f"Found in inventory: {Utils.list_to_ranges(sorted(list(cake_set)))}\n"
+        inventory_embed.description += f"Found in inventory: {Utils.list_to_ranges(sorted(list(cake_set)))}\n"
 
         not_owned_cakes = set()
 
@@ -250,47 +247,44 @@ class InventoryImporter:
             if i not in cake_set:
                 not_owned_cakes.add(i)
 
-        ret_str += f"Not found in inventory: {Utils.list_to_ranges(sorted(list(not_owned_cakes)))}\n"
+        inventory_embed.description += f"Not found in inventory: {Utils.list_to_ranges(sorted(list(not_owned_cakes)))}\n"
         count_needed = 54 - len(cake_set)
-        ret_str += f"Needed cakes to complete the bag: {count_needed}\n"
+        inventory_embed.description += f"Needed cakes to complete the bag: {count_needed}\n"
 
-        ret_str += "\nSpooky pies:\n```\n"
         if len(pie_list) == 0:
-            ret_str += "No spooky pies found"
+            pie_str += "No spooky pies found"
         else:
             table = TablePrint((17, 10, 4, 6, 6))
-            ret_str += table.print_row(["Name", "rank", "year", "position", "score"])
+            pie_str += table.print_row(["Name", "rank", "year", "position", "score"])
             for pie in pie_list:
-                ret_str += table.print_row(
+                pie_str += table.print_row(
                     [pie['player'], pie['rank'], pie['year'], pie['position'] if (pie['position'] != "-1") else '?',
                      pie['score'] if (pie['score'] != "-1") else '?'])
-        ret_str += "```"
 
-        return ret_str
+        return inventory_embed, pie_str
 
-    def offer_cakes(self, mc_name):
+    async def offer_cakes(self, mc_name, interaction):
         self.mc_name = mc_name
 
-        ret_str = ""
+        await interaction.response.send_message(content=f"Loading data for player {mc_name}...")
 
         try:
             mc_uuid = Utils.get_uuid_from_mc_name(self.mc_name)
             stats = self.get_stats_from_uuid(mc_uuid)
 
             print("stats:" + str(stats))
+            stats_embed = discord.Embed(title=mc_name)
 
             if 'current_profile' in stats:
-                ret_str += f"{mc_name} ({stats['current_profile']}) - {Utils.is_player_online(mc_name)}:\n"
-            else:
-                ret_str += f"{mc_name}:\n"
+                stats_embed.description = f"{stats['current_profile']} - {Utils.is_player_online(mc_name)}\n"
 
             if 'purse' in stats and stats['purse'] is not None:
-                ret_str += f"Purse: {Utils.k_to_mil(int(stats['purse']) / 1000)} mil\n"
+                stats_embed.description += f"Purse: {Utils.k_to_mil(int(stats['purse']) / 1000)} mil\n"
 
-            ret_str += f"\nAH:\n"
+            ah_embed = discord.Embed(title="AH", description="")
 
             if 'auctions_bids' in stats:
-                ret_str += f"Bids: {int(stats['auctions_bids'])}\n"
+                ah_embed.description += f"Bids: {int(stats['auctions_bids'])}\n"
 
             if 'auctions_sold_special' not in stats:
                 stats['auctions_sold_special'] = 0
@@ -298,14 +292,26 @@ class InventoryImporter:
             if 'auctions_bought_special' not in stats:
                 stats['auctions_bought_special'] = 0
 
-            ret_str += f"Special bought/sold: {int(stats['auctions_bought_special'])}/{int(stats['auctions_sold_special'])}\n"
+            ah_embed.description += f"Special bought/sold: " \
+                                    f"{int(stats['auctions_bought_special'])}/{int(stats['auctions_sold_special'])}\n"
 
             # if 'purse' in stats:
             # 	return f"This player does not have his inventory api enabled\n"
             # else:
             if 'current_profile_uuid' in stats:
-                ret_str = self.get_inventory_details(mc_uuid, stats['current_profile_uuid'], ret_str)
-            return ret_str
+                inventory_embed, pie_str = self.get_inventory_details(mc_uuid, stats['current_profile_uuid'])
+
+            await interaction.edit_original_response(embeds=[stats_embed, ah_embed, inventory_embed], content="")
+
+            await interaction.channel.send("Spooky Pies:")
+            if pie_str is not None:
+                if len(pie_str) < 1995:
+                    await interaction.channel.send(pie_str)
+                else:
+                    msgs = Utils.split_message(pie_str)
+                    for msg in msgs:
+                        await interaction.channel.send(f"```diff\n{msg}```")
+
         except json.decoder.JSONDecodeError:
             return f"Hypixel api is offline or player not found :( Try again later"
 

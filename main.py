@@ -119,19 +119,7 @@ async def col(interaction, mc_name: str):
     if await disallow_execute(interaction):
         return True
 
-    await interaction.response.send_message(content=f"Loading data for player {mc_name}...")
-
-    msg = InventoryImporter().offer_cakes(mc_name)
-    if len(msg) < 1995:
-        await interaction.edit_original_response(content=msg)
-    else:
-        # TODO: fix spooky pie table formatting
-        msgs = Utils.split_message(msg=msg)
-        await interaction.edit_original_response(content=msgs[0])
-        msgs.pop(0)
-        for msg in msgs:
-            await interaction.channel.send(f"```diff\n{msg}```")
-
+    await InventoryImporter().offer_cakes(mc_name, interaction)
 
 @tree.command()
 async def top(interaction):
