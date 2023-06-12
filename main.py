@@ -141,20 +141,6 @@ async def top(interaction):
 
 
 @tree.command()
-async def uc(interaction, mc_name: str):
-    """
-    See auctions where given player was undercut
-    """
-    if await disallow_execute(interaction):
-        return
-
-    if mc_name is not None:
-        await cakes_obj.analyze_undercuts(interaction, mc_name)
-    else:
-        await interaction.response.send_message(f"Invalid syntax, use /uc NAME")
-
-
-@tree.command()
 async def undercuts(interaction, mc_name: str):
     """
     See auctions where given player was undercut
@@ -163,9 +149,11 @@ async def undercuts(interaction, mc_name: str):
         return
 
     if mc_name is not None:
-        await cakes_obj.analyze_undercuts(interaction, mc_name)
-    else:
-        await interaction.response.send_message(f"Invalid syntax, use /undercuts NAME")
+        await interaction.response.send_message("Loading...")
+
+        response_msg = await cakes_obj.analyze_undercuts(interaction, mc_name)
+
+        await interaction.edit_original_response(content=response_msg)
 
 
 @tree.command(name="bins")
