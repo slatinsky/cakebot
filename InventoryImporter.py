@@ -182,6 +182,10 @@ class InventoryImporter:
         stats = {}
 
         if 'profiles' in data:
+            if data['profiles'] is None:
+                self.logger.warn(f"Profiles is None for UUID {uuid}. Possibly not migrated player.")
+                return None
+
             for profile in data['profiles']:
                 personal_profile = profile['members'][uuid]
                 if profile['selected'] is True:
@@ -262,6 +266,9 @@ class InventoryImporter:
         try:
             mc_uuid = self.utils.get_uuid_from_mc_name(self.mc_name)
             stats = self.get_stats_from_uuid(mc_uuid)
+
+            if stats is None:
+                await interaction.edit_original_response(content=f"Stats could not be retrieved for player '{mc_name}'")
 
             self.logger.debug("stats:" + str(stats))
             stats_embed = discord.Embed(title=mc_name)
