@@ -14,7 +14,7 @@ from utils.LogController import LogController
 
 class Utils:
     def __init__(self):
-        self.logger = LogController.get_logger()
+        self.logger = LogController().get_logger()
 
     async def fetch_one_url(self, session, url, save_path=None):
         async with session.get(url) as response:
@@ -39,7 +39,7 @@ class Utils:
                     save_path = save_as[url]
                 else:
                     save_path = None
-                tasks.append(fetch_one_url(session, url, save_path))
+                tasks.append(self.fetch_one_url(session, url, save_path))
             htmls = await asyncio.gather(*tasks)
             return htmls
 
