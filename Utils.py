@@ -50,27 +50,27 @@ class Utils:
             ah_dict = json.load(f)
             if ah_dict['success']:
                 number_of_pages = ah_dict['totalPages']
+                self.logger.debug(f"{number_of_pages} pages found")
                 return number_of_pages
             else:
-                print("number_of_pages error")
+                self.logger.error("Error in number_of_pages")
 
     def download_auctions(self):
         global cake_auctions_json_list
         global cake_auction_list
-        print("Updating all auctions")
-        # print("Deleting old auction files")
+        self.logger.info("Updating all auctions")
         for filename in os.listdir('auction'):
             os.remove('auction/' + filename)
 
-        # print("Downloading page 0")
         r = requests.get('https://api.hypixel.net/skyblock/auctions?key=' + Config.API_KEY + '&page=0')
         with open(r'auction/0.json', 'wb') as f:
             f.write(r.content)
         number_of_pages = self.get_number_of_pages()
-        print("Downloading", number_of_pages, "pages")
+        self.logger.info(f"Downloading {number_of_pages} pages")
 
         if number_of_pages is None:
-            print('number_of_pages is None for some reason, downloading 2 pages, so the script does not crash')
+            self.logger.warn("number_of_pages is None for some reason, "
+                             "downloading 2 pages, so the script does not crash")
             number_of_pages = 2
 
         urls = []
@@ -81,19 +81,19 @@ class Utils:
             save_as[url] = r'auction/' + str(page_number) + '.json'
 
         self.download_urls(urls, save_as)
-        print("auctions updated")
+        self.logger.info("Auctions successfully updated")
 
     def delete_database(self):
         if os.path.exists('mcnames.db'):
             # rename with timestamp
             os.rename('mcnames.db', f'mcnames_{datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}.db')
-            print("mcnames.db deleted")
+            self.logger.info("mcnames.db deleted")
 
     def is_player_online(self, mc_name):
         try:
             mc_uuid = self.get_uuid_from_mc_name(mc_name)
         except json.decoder.JSONDecodeError:
-            print("is_player_online - name changed, old name:", mc_name)
+            self.logger.debug(f"is_player_online - name changed, old name: {mc_name}")
             return "name_not_found_or_changed"
 
         url = 'https://api.hypixel.net/player?key=' + Config.API_KEY + '&uuid=' + mc_uuid
@@ -101,7 +101,7 @@ class Utils:
         try:
             json_player_stats = requests.get(url=url).json()
         except:
-            print('INVALID API RESPONSE - it is not known if', mc_name, 'is online')
+            self.logger.error(f"INVALID API RESPONSE - it is not known if {mc_name} is online")
             return "hypixel_api_is_down"
 
         if json_player_stats['success']:
