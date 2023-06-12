@@ -36,7 +36,7 @@ class Cakes:
                     ah_dict = json.load(f)
                 except:
                     self.ah_incorrect_pages += 1
-                    print('INVALID FILE', filename)
+                    self.logger.error(f"Invalid file: {filename}")
                     continue
                 if ah_dict['success']:
                     for auction in ah_dict['auctions']:
@@ -57,24 +57,26 @@ class Cakes:
         return current_year
 
     def try_to_update_ah(self):
-        # print("Skipping downloading AH because DEBUG")
-        # return False
         if self.ah_last_updated + 120 < time.time():
             self.ah_last_updated = time.time()
-            print("Updating AH")
+            self.logger.info("Updating AH")
             self.utils.download_auctions()
             self.cakes = self.extract_cake_auctions_from_json()
             return True
         else:
-            print("AH updating skipped")
+            self.logger.info("AH updating skipped")
             return False
-
 
     def incorrect_download_warning(self):
         if self.ah_incorrect_pages != 0:
+            self.logger.warn(msg=f"WARNING: INCOMPLETE DATA SHOWN, BECAUSE HYPIXEL API RETURNED INCOMPLETE DATA! "
+                                 f"Invalid pages " f"{self.ah_incorrect_pages} out of {self.ah_pages_total} pages "
+                                 f"total\n ")
             return f"WARNING: INCOMPLETE DATA SHOWN, BECAUSE HYPIXEL API RETURNED INCOMPLETE DATA! Invalid pages " \
                    f"{self.ah_incorrect_pages} out of {self.ah_pages_total} pages total\n "
         elif self.ah_pages_total == 0:
+            self.logger.warn(msg=f"HYPIXEL API RETURNED NO DATA for some reason (it is currently probably down). "
+                                 f"INCOMPLETE DATA SHOWN (if any)\n")
             return f"WARNING: HYPIXEL API RETURNED NO DATA for some reason (it is currently probably down). " \
                    f"INCOMPLETE DATA SHOWN (if any)\n"
         else:

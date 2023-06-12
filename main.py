@@ -17,8 +17,10 @@ logger = log_controller.get_logger()
 
 nest_asyncio.apply()
 
+logger.info("Starting up cakebot...")
+
 if len(Config.ALLOWED_CHANNEL_IDS) == 0:
-    print("No allowed channel IDs found in config.ini")
+    logger.error("No allowed channel IDs found in config")
     exit()
 
 
@@ -32,10 +34,10 @@ def verify_api_key():
 
 
 if not verify_api_key():
-    print("Invalid hypixel api_key")
+    logger.error("Invalid Hypixel API key!")
     exit()
 else:
-    print("Hypixel api_key is valid")
+    logger.info("Hypixel API key is valid")
 
 
 def get_commit_hash():
@@ -76,7 +78,7 @@ else:
     BETA = ""
 VERSION_STRING = f"Bot version{BETA} {get_commit_index()} ({get_commit_hash()}, {get_commit_time()})"
 
-print(VERSION_STRING)
+logger.info(f"Running {VERSION_STRING}")
 
 # make dir "auction" if not exists
 if not os.path.exists('auction'):
@@ -93,11 +95,10 @@ tree = app_commands.CommandTree(client)
 @client.event
 async def on_ready():  # This function will be run by the discord library when the bot has logged in
     await tree.sync()
-    print("Logged in as " + client.user.name)
+    logger.info(f"Bot logged in as {client.user.name}")
 
 
 async def disallow_execute(interaction):
-    # print(ctx.author.id)
     deny_author_ids = []  # copy author id from discord
 
     if interaction.user.id in deny_author_ids:
@@ -105,7 +106,6 @@ async def disallow_execute(interaction):
         return True  # do not allow commands from these users
 
     if interaction.channel_id not in Config.ALLOWED_CHANNEL_IDS:
-        print("not in allowed channel")
         await interaction.response.send_message("This channel is not allowed for this bot.", ephemeral=True)
         return True  # not correct channel ID, ignore command
 
@@ -180,7 +180,6 @@ async def bins(interaction, name_to_exclude: str):
     bins_data = await cakes_obj.analyze_bin_prices(interaction, name_to_exclude)
     bins_msg = Utils.split_message(bins_data)
     for msg in bins_msg:
-        # print(split + "\n")
         await interaction.channel.send(f"```diff\n{msg}```")
     await interaction.edit_original_response(content="BIN Overview:")
 
@@ -278,7 +277,6 @@ async def help(interaction):
     """
     if await disallow_execute(interaction):
         return
-    print("printing help")
 
     help = f"""
 Deprecation warning:

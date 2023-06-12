@@ -114,7 +114,7 @@ class Utils:
                 # TODO: check why/when this error appears
                 return "you_should_never_see_this_error"
         else:
-            print("is_player_online - ERROR")
+            self.logger.error("is_player_online - ERROR: ", json_player_stats)
             return False
 
     def get_uuid_from_mc_name(self, name):
@@ -128,7 +128,7 @@ class Utils:
                 data = requests.get("https://sessionserver.mojang.com/session/minecraft/profile/" + uuid).json()
                 name = data["name"]
                 mcnames[uuid] = name
-                print("Fetched name from mojang -", mcnames[uuid])
+                self.logger.debug(f"Fetched name from mojang - {mcnames[uuid]}")
             # time.sleep(0.1)
 
             found_name = mcnames[uuid]

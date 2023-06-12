@@ -32,8 +32,7 @@ class CakeAuction:
         if reg:
             return int(reg.group(1).replace(",", ""))
         else:
-            print(item_lore)
-            print("year error", item_lore)
+            self.logger.warn(f"Year error: {item_lore}")
             return -1
 
     def get_bidders(self):
@@ -42,7 +41,6 @@ class CakeAuction:
 
         for bid in self.json['bids']:
             top_bidder_uuid = bid['bidder']
-        # print(bid['bidder'])
         return top_bidder_uuid
 
     def is_bin(self) -> bool:

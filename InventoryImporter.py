@@ -24,7 +24,6 @@ class InventoryImporter:
 
     def decode_inventory_data_base64(self, raw_data):
         data = nbt.nbt.NBTFile(fileobj=io.BytesIO(base64.b64decode(raw_data)))
-        # print(data.pretty_tree())
         return data
 
     def decode_inventory_data_raw(self, raw_data):
@@ -40,7 +39,7 @@ class InventoryImporter:
                 return cake_year
 
             else:
-                print("year error", cake_description)
+                self.logger.warn(f"Error when getting year of cake: {cake_description}")
 
     def list_of_all_items_in_inventories(self, inventories: list):
         all_items = []
@@ -59,7 +58,6 @@ class InventoryImporter:
                                 item_type = str(item['tag']['ExtraAttributes']['id'])
 
                                 if 'ExtraAttributes' in item["tag"]:
-                                    # print(item["tag"]["ExtraAttributes"])
                                     if 'new_year_cake_bag_data' in item["tag"]["ExtraAttributes"]:
                                         item_storages.append(self.decode_inventory_data_raw(
                                             item["tag"]["ExtraAttributes"]["new_year_cake_bag_data"].value))
@@ -134,7 +132,7 @@ class InventoryImporter:
             return pie_info
 
         except Exception as e:
-            print(e, "pie_item_extra_attributes weird", pie_item_extra_attributes)
+            self.logger.error(e, "pie_item_extra_attributes weird", pie_item_extra_attributes)
             return None
 
     # one pie ExtraAttributes: {TAG_Int('leaderboard_score'): 2858, TAG_String('leaderboard_player'): §cBloozing, TAG_Int('leaderboard_position'): 281, TAG_Int('new_years_cake'): 101, TAG_String('originTag'): EVENT_REWARD, TAG_String('id'): SPOOKY_PIE, TAG_String('event'): spooky_festival_83, TAG_String('uuid'): ccc5d8d2-b9dc-45c5-81bb-9f13d3047249, TAG_String('timestamp'): 11/17/20 7:41 PM}
@@ -144,13 +142,11 @@ class InventoryImporter:
             if 'ExtraAttributes' in item["tag"]:
                 if 'id' in item['tag']['ExtraAttributes']:
                     item_type = str(item['tag']['ExtraAttributes']['id'])
-                    # print(item_type)
                     if item_type == 'SPOOKY_PIE':
                         pie_info = self.get_pie_info(item['tag']['ExtraAttributes'])
                         if pie_info is not None:
                             pie_list.append(pie_info)
 
-        # pprint(pie_list)
         return pie_list
 
     def get_stats(self, personal_profile, profile):
@@ -164,7 +160,7 @@ class InventoryImporter:
         if 'cute_name' in profile:
             stats['cute_name'] = profile['cute_name']
         else:
-            print("CUTE_NAME NOT FOUND", profile)
+            self.logger.debug(f"Cute name found: {profile}")
 
         if "coin_purse" in personal_profile:
             stats['purse'] = personal_profile['coin_purse']
@@ -190,24 +186,15 @@ class InventoryImporter:
         if 'profiles' in data:
             for profile in data['profiles']:
                 personal_profile = profile['members'][uuid]
-                # print("PROF", personal_profile)
-                # print(profile['cute_name'], personal_profile['last_save'])
                 if profile['selected'] is True:
                     stats = self.get_stats(personal_profile, profile)
-                    print(f"Found selected profile: {profile['cute_name']}")
-                # print("skipped profile")
+                    self.logger.info(f"Found selected profile: {profile['cute_name']}")
                 else:
-                    print(f"Profile {profile['cute_name']} is not selected")
+                    self.logger.info(f"Profile {profile['cute_name']} is not selected")
         else:
-            print('PROFILES NOT FOUND')
-        # profile = data['profile']
-        # personal_profile = data['profile']['members'][uuid]
-        # stats = self.get_stats(data['profile'], profile)
+            self.logger.warn(f"Profiles not found for '{uuid}'")
 
         return stats
-
-    #
-    # 	# print(current_profile, current_profile_uuid)
 
     def get_inventory_details(self, mc_uuid: str, profile_uuid: str):
 
@@ -278,7 +265,7 @@ class InventoryImporter:
             mc_uuid = self.utils.get_uuid_from_mc_name(self.mc_name)
             stats = self.get_stats_from_uuid(mc_uuid)
 
-            print("stats:" + str(stats))
+            self.logger.debug("stats:" + str(stats))
             stats_embed = discord.Embed(title=mc_name)
 
             if 'current_profile' in stats:
