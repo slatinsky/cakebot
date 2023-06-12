@@ -26,7 +26,9 @@ class Utils:
             return url, response_text
 
     ### dowloads everything from urls, then returns with response
-    def download_urls(self, urls: list, save_as={}):
+    def download_urls(self, urls: list, save_as=None):
+        if save_as is None:
+            save_as = {}
         loop = asyncio.get_event_loop()
         htmls = loop.run_until_complete(self.download_urls_helper(urls, save_as))
         return htmls

@@ -40,9 +40,8 @@ class Cakes:
                     continue
                 if ah_dict['success']:
                     for auction in ah_dict['auctions']:
-                        if 'New Year Cake' in auction['item_name'].strip() and "bag" not in auction[
-                            'item_name'].strip().lower():
-                            # if auction['auctioneer'] != CONF['my_mc_details']['uuid']:
+                        if 'New Year Cake' in auction['item_name'].strip() and "bag" not in auction['item_name'] \
+                                .strip().lower():
                             cake_auction_dict[auction['uuid']] = CakeAuction(auction)
                 else:
                     self.ah_incorrect_pages += 1
@@ -82,6 +81,7 @@ class Cakes:
         else:
             return ""
 
+    # TODO: unused?
     def rarest_cakes_in_ah(self):
         cake_counts = {}
         current_year = self.get_current_cake_year()
@@ -122,11 +122,6 @@ class Cakes:
                     else:
                         self.bin_cake_years[cake.year].append(cake)
 
-        # if cake.year not in cake_counts:
-        # 	cake_counts[cake.year] = 1
-        # else:
-        # 	cake_counts[cake.year] += 1
-
         self.max_year_found_in_dict = max(self.bin_cake_years, key=int)
 
         self.bin_cheapest_cakes = {}
@@ -154,7 +149,6 @@ class Cakes:
         ret_str += table.print_row(["Year", "BINs", "5 cheapest bins", "Cheapest auctioneer"])
 
         for year in range(self.max_year_found_in_dict + 1):
-            year_cake_list = []
             if year in self.bin_cake_years:
                 year_cake_list_5_cheapest_str = ""
                 for cake_price, cake_id, cake in self.bin_cheapest_cakes[year]:
@@ -166,13 +160,11 @@ class Cakes:
         return ret_str
 
     async def analyze_undercuts(self, ctx, name=None):
+        name_uuid = ""
         if name is not None:
             name_uuid = self.utils.get_uuid_from_mc_name(name)
         ret_str = ""
-        # if not self.try_to_update_ah():
-        # 	ret_str += "DEBUG: Updating AH skipped, because it was updated in the last 2 minutes\n"
         self.bin_prices_to_var(name)
-        # self.bin_cheapest_cakes[]
 
         name_owned_cakes = {}
         name_best_offers = {}
@@ -187,8 +179,6 @@ class Cakes:
                         name_owned_cakes[cake.year] = []
                         name_owned_cakes[cake.year].append(cake.year)
                         name_best_offers[cake.year] = cake.price
-
-        # name_owned_cakes = sorted(name_owned_cakes)
 
         # for each cake year in ah
         found_undercuts = False
@@ -217,24 +207,19 @@ class Cakes:
 
         if not found_undercuts:
             ret_str += f"No undercuts found for {name}\n"
-        # for ends_in, cake_year, cake_id, cake in name_owned_cakes:
-        # 	print(cake_year)
 
         return ret_str
 
-    # print(ret_str)
-    #
-
     async def auctions_ending_soon(self, ctx, auctioneer=None, top_bidder=None):
+        auctioneer_uuid = ""
+        top_bidder_uuid = ""
+
         if auctioneer is not None:
             auctioneer_uuid = self.utils.get_uuid_from_mc_name(auctioneer)
 
         if top_bidder is not None:
             top_bidder_uuid = self.utils.get_uuid_from_mc_name(top_bidder)
         ret_str = ""
-
-        if not self.try_to_update_ah():
-            ret_str += "DEBUG: Updating AH skipped, because it was updated in the last 2 minutes\n"
 
         ret_str += self.incorrect_download_warning()
 
@@ -309,14 +294,8 @@ class Cakes:
 
         return ret_str
 
-    # print(ret_str)
-    # return f"```{ret_str}```"
-
     def top(self):
         ret_str = ""
-
-        if not self.try_to_update_ah():
-            ret_str += "DEBUG: Updating AH skipped, because it was updated in the last 2 minutes\n"
 
         ret_str += self.incorrect_download_warning()
 
