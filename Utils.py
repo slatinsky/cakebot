@@ -121,7 +121,13 @@ class Utils:
 
     def get_uuid_from_mc_name(self, name):
         url = 'https://api.mojang.com/users/profiles/minecraft/' + name
-        return requests.get(url=url).json()['id']
+        data = requests.get(url=url).json()
+
+        if 'id' in data:
+            return data['id']
+        else:
+            self.logger.warn(f"Could not retrieve UUID from player name '{name}': {data['errorMessage']}")
+            return None
 
     # api limit 600 per 10 minutes = 1 per sec
     def get_mc_name_from_uuid(self, uuid):

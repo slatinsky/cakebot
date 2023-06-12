@@ -159,10 +159,11 @@ class Cakes:
 
         return ret_str
 
-    async def analyze_undercuts(self, ctx, name=None):
-        name_uuid = ""
-        if name is not None:
-            name_uuid = self.utils.get_uuid_from_mc_name(name)
+    async def analyze_undercuts(self, ctx, name):
+        name_uuid = self.utils.get_uuid_from_mc_name(name)
+        if name_uuid is None:
+            return f"Could not get player from name {name}"
+
         ret_str = ""
         self.bin_prices_to_var(name)
 
