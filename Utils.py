@@ -117,42 +117,6 @@ class Utils:
             print("is_player_online - ERROR")
             return False
 
-    def split_message(self, msg):
-        """
-        Split message to multiple messages if it is too long.
-        """
-
-        msgs = msg.split('\n')
-
-        # merge adjacent if total length is less than 2000
-        merged_msgs = []
-
-        adding_to_index = 0
-        for msg in msgs:
-            if len(merged_msgs) == 0:
-                merged_msgs.append(msg)
-                continue
-
-            if len(merged_msgs[adding_to_index]) + len(msg) < 1980:
-                merged_msgs[adding_to_index] += '\n' + msg
-            else:
-                merged_msgs.append(msg)
-                adding_to_index += 1
-
-        return merged_msgs
-
-    def seconds_to_hours_minutes_seconds(self, seconds: int):
-        if seconds < 0:
-            return seconds
-
-        m, s = divmod(seconds, 60)
-        h, m = divmod(m, 60)
-
-        return f'{h:d}:{m:02d}:{s:02d}'
-
-    def uuid_add_dashes(self, uuid):
-        return f"{uuid[0:8]}-{uuid[8:12]}-{uuid[12:16]}-{uuid[16:20]}-{uuid[20:32]}"
-
     def get_uuid_from_mc_name(self, name):
         url = 'https://api.mojang.com/users/profiles/minecraft/' + name
         return requests.get(url=url).json()['id']
@@ -172,6 +136,45 @@ class Utils:
             return found_name
 
     # https://stackoverflow.com/questions/3429510/pythonic-way-to-convert-a-list-of-integers-into-a-string-of-comma-separated-rang
+
+
+def split_message(msg):
+    """
+    Split message to multiple messages if it is too long.
+    """
+
+    msgs = msg.split('\n')
+
+    # merge adjacent if total length is less than 2000
+    merged_msgs = []
+
+    adding_to_index = 0
+    for msg in msgs:
+        if len(merged_msgs) == 0:
+            merged_msgs.append(msg)
+            continue
+
+        if len(merged_msgs[adding_to_index]) + len(msg) < 1980:
+            merged_msgs[adding_to_index] += '\n' + msg
+        else:
+            merged_msgs.append(msg)
+            adding_to_index += 1
+
+    return merged_msgs
+
+
+def uuid_add_dashes(uuid):
+    return f"{uuid[0:8]}-{uuid[8:12]}-{uuid[12:16]}-{uuid[16:20]}-{uuid[20:32]}"
+
+
+def seconds_to_hours_minutes_seconds(seconds: int):
+    if seconds < 0:
+        return seconds
+
+    m, s = divmod(seconds, 60)
+    h, m = divmod(m, 60)
+
+    return f'{h:d}:{m:02d}:{s:02d}'
 
 
 def k_to_mil(num: int):
