@@ -10,12 +10,16 @@ import requests
 import Utils
 from utils import Config
 from TablePrint import TablePrint
+from utils.LogController import LogController
 
 
 class InventoryImporter:
 
     # count_needed = 5
     # order = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 69, 70, 71]
+    def __init__(self):
+        self.mc_name = None
+        self.logger = LogController().get_logger()
 
     def decode_inventory_data_base64(self, raw_data):
         data = nbt.nbt.NBTFile(fileobj=io.BytesIO(base64.b64decode(raw_data)))
@@ -315,6 +319,3 @@ class InventoryImporter:
 
         except json.decoder.JSONDecodeError:
             return f"Hypixel api is offline or player not found :( Try again later"
-
-    def __init__(self):
-        self.mc_name = None

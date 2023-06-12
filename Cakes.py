@@ -5,10 +5,17 @@ import time
 import Utils
 from TablePrint import TablePrint
 from CakeAuction import CakeAuction
-
+from utils.LogController import LogController
 
 class Cakes:
 
+    def __init__(self):
+        self.ah_last_updated = time.time() - 99999
+        self.cakes = None
+        self.cakes = self.extract_cake_auctions_from_json()
+        self.ah_incorrect_pages = 0
+        self.ah_pages_total = 0
+        self.logger = LogController().get_logger()
     def get_latest_cake_year(self):
         latest_year = -1
         for key, cake in self.cakes.items():
@@ -60,12 +67,6 @@ class Cakes:
             print("AH updating skipped")
             return False
 
-    def __init__(self):
-        self.ah_last_updated = time.time() - 99999
-        self.cakes = None
-        self.cakes = self.extract_cake_auctions_from_json()
-        self.ah_incorrect_pages = 0
-        self.ah_pages_total = 0
 
     def incorrect_download_warning(self):
         if self.ah_incorrect_pages != 0:
