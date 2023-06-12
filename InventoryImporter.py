@@ -19,6 +19,7 @@ class InventoryImporter:
     # order = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 69, 70, 71]
     def __init__(self):
         self.mc_name = None
+        self.utils = Utils.Utils()
         self.logger = LogController().get_logger()
 
     def decode_inventory_data_base64(self, raw_data):
@@ -274,14 +275,14 @@ class InventoryImporter:
         await interaction.response.send_message(content=f"Loading data for player {mc_name}...")
 
         try:
-            mc_uuid = Utils.get_uuid_from_mc_name(self.mc_name)
+            mc_uuid = self.utils.get_uuid_from_mc_name(self.mc_name)
             stats = self.get_stats_from_uuid(mc_uuid)
 
             print("stats:" + str(stats))
             stats_embed = discord.Embed(title=mc_name)
 
             if 'current_profile' in stats:
-                stats_embed.description = f"{stats['current_profile']} - {Utils.is_player_online(mc_name)}\n"
+                stats_embed.description = f"{stats['current_profile']} - {self.utils.is_player_online(mc_name)}\n"
 
             if 'purse' in stats and stats['purse'] is not None:
                 stats_embed.description += f"Purse: {Utils.k_to_mil(int(stats['purse']) / 1000)} mil\n"

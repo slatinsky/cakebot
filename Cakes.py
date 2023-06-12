@@ -15,7 +15,9 @@ class Cakes:
         self.cakes = self.extract_cake_auctions_from_json()
         self.ah_incorrect_pages = 0
         self.ah_pages_total = 0
+        self.utils = Utils.Utils()
         self.logger = LogController().get_logger()
+
     def get_latest_cake_year(self):
         latest_year = -1
         for key, cake in self.cakes.items():
@@ -60,7 +62,7 @@ class Cakes:
         if self.ah_last_updated + 120 < time.time():
             self.ah_last_updated = time.time()
             print("Updating AH")
-            Utils.download_auctions()
+            self.utils.download_auctions()
             self.cakes = self.extract_cake_auctions_from_json()
             return True
         else:
@@ -105,7 +107,7 @@ class Cakes:
             print("DEBUG: Updating AH skipped, because it was updated in the last 2 minutes")
 
         if ignore_name is not None:
-            ignore_name_uuid = Utils.get_uuid_from_mc_name(ignore_name)
+            ignore_name_uuid = self.utils.get_uuid_from_mc_name(ignore_name)
         else:
             ignore_name_uuid = None
 
@@ -157,14 +159,14 @@ class Cakes:
                 for cake_price, cake_id, cake in self.bin_cheapest_cakes[year]:
                     year_cake_list_5_cheapest_str += str(cake_price) + " "
                 ret_str += table.print_row([year, str(len(self.bin_cake_years[year])), year_cake_list_5_cheapest_str,
-                                            Utils.get_mc_name_from_uuid(
+                                            self.utils.get_mc_name_from_uuid(
                                                 self.bin_cheapest_cakes[year][0][2].auctioneer_uuid)])
 
         return ret_str
 
     async def analyze_undercuts(self, ctx, name=None):
         if name is not None:
-            name_uuid = Utils.get_uuid_from_mc_name(name)
+            name_uuid = self.utils.get_uuid_from_mc_name(name)
         ret_str = ""
         # if not self.try_to_update_ah():
         # 	ret_str += "DEBUG: Updating AH skipped, because it was updated in the last 2 minutes\n"
@@ -206,7 +208,7 @@ class Cakes:
                                 if not found_undercut:
                                     ret_str += f"--- {year} - {str(name_offer_in_milions)} ---\n"
 
-                                ret_str += f"Undercut - {str(cake.price).ljust(5)} - {Utils.get_mc_name_from_uuid(cake.auctioneer_uuid)}\n"
+                                ret_str += f"Undercut - {str(cake.price).ljust(5)} - {self.utils.get_mc_name_from_uuid(cake.auctioneer_uuid)}\n"
                                 found_undercut = True
 
                 if found_undercut:
@@ -224,10 +226,10 @@ class Cakes:
 
     async def auctions_ending_soon(self, ctx, auctioneer=None, top_bidder=None):
         if auctioneer is not None:
-            auctioneer_uuid = Utils.get_uuid_from_mc_name(auctioneer)
+            auctioneer_uuid = self.utils.get_uuid_from_mc_name(auctioneer)
 
         if top_bidder is not None:
-            top_bidder_uuid = Utils.get_uuid_from_mc_name(top_bidder)
+            top_bidder_uuid = self.utils.get_uuid_from_mc_name(top_bidder)
         ret_str = ""
 
         if not self.try_to_update_ah():
@@ -270,10 +272,10 @@ class Cakes:
 
             ends_in = cake.ends_in()
 
-            auctioneer = Utils.get_mc_name_from_uuid(cake.auctioneer_uuid)
+            auctioneer = self.utils.get_mc_name_from_uuid(cake.auctioneer_uuid)
 
             if cake.top_bidder_uuid:
-                top_bidder = Utils.get_mc_name_from_uuid(cake.top_bidder_uuid)
+                top_bidder = self.utils.get_mc_name_from_uuid(cake.top_bidder_uuid)
             else:
                 top_bidder = ""
 
@@ -345,9 +347,9 @@ class Cakes:
         ret_str += table.print_row(["top bids", "name", "online/offline"])
         i = 0
         for uuid, count in top_bidders_uuid.items():
-            mc_name = Utils.get_mc_name_from_uuid(uuid)
+            mc_name = self.utils.get_mc_name_from_uuid(uuid)
 
-            online_status = Utils.is_player_online(mc_name)
+            online_status = self.utils.is_player_online(mc_name)
             ret_str += table.print_row([count, mc_name, online_status])
             if i == 15:
                 break
@@ -357,9 +359,9 @@ class Cakes:
         ret_str += table.print_row(["auctions", "name", "online/offline"])
         i = 0
         for uuid, count in top_auctioneers_uuid.items():
-            mc_name = Utils.get_mc_name_from_uuid(uuid)
+            mc_name = self.utils.get_mc_name_from_uuid(uuid)
 
-            online_status = Utils.is_player_online(mc_name)
+            online_status = self.utils.is_player_online(mc_name)
             ret_str += table.print_row([count, mc_name, online_status])
             if i == 15:
                 break
