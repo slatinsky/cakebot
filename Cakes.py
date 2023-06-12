@@ -105,8 +105,7 @@ class Cakes:
             print(str(year).ljust(4), count)
 
     def bin_prices_to_var(self, ignore_name=None):
-        if not self.try_to_update_ah():
-            print("DEBUG: Updating AH skipped, because it was updated in the last 2 minutes")
+        self.try_to_update_ah()
 
         if ignore_name is not None:
             ignore_name_uuid = self.utils.get_uuid_from_mc_name(ignore_name)
@@ -145,7 +144,7 @@ class Cakes:
 
                 self.bin_cheapest_cakes[year] = year_cake_list_5_cheapest
 
-    async def analyze_bin_prices(self, ctx, ignore_name=None):
+    async def analyze_bin_prices(self, ctx, ignore_name):
         self.bin_prices_to_var(ignore_name)
 
         ret_str = ""

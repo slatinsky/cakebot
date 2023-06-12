@@ -169,7 +169,7 @@ async def undercuts(interaction, mc_name: str):
 
 
 @tree.command(name="bins")
-async def bins(interaction, name_to_exclude: str):
+async def bins(interaction, name_to_exclude: str = None):
     """
     Analysed current bin prices and show 5 cheapest bins
     """
