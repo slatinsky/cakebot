@@ -211,18 +211,6 @@ async def ah(interaction, mc_name: str):
 
 
 @tree.command()
-async def version(interaction):
-    """
-    Display the bots current version
-    """
-    if await disallow_execute(interaction):
-        return
-
-    version_embed = discord.Embed(description=VERSION_STRING, title="Bot Version")
-    await interaction.response.send_message(content=None, embed=version_embed)
-
-
-@tree.command()
 async def tb(interaction, mc_name: str):
     """
     Show auctions where given player is top bidder
@@ -259,20 +247,25 @@ async def delcache(interaction):
 
 
 @tree.command()
-async def help(interaction):
+async def info(interaction):
     """
     See what this bot is able to do and how
     """
     if await disallow_execute(interaction):
         return
 
-    help = f"""
-Deprecation warning:
+    deprecation_message = f"""
 This cake bot is deprecated. That means, that I (Slada) am not playing the game anymore and I can't improve the bot. I will try to keep the bot online and do small bug fixes. I promise, that the bot will stay online at least till 2022-01-01.
 
 Turquoise_Fish sadly isn't working on a replacement bot :(
 
-Available commands:
+The bot is currently maintained and worked on by <@188690150975471616>, for any questions/improvements message/ping me!
+"""
+    deprecation_embed = discord.Embed(description=deprecation_message, title="Status of this bot")
+
+    version_embed = discord.Embed(description=VERSION_STRING, title="Bot Version")
+
+    commands_message = f"""Available commands:
 ```
 /ah NAME
 /tb NAME
@@ -281,40 +274,13 @@ Available commands:
 /bins NAME_TO_EXCLUDE
 /top
 /col NAME
-/help
+/info
 /undercuts NAME
 ```
-
-```/ah NAME```-it allows you to quickly optimize your auctions, because only cheapest bin sells.
--bins in cheapest bins column don't include your bins (same as /bins NAME_TO_EXCLUDE command)
-
-```/tb NAME```- shows auctions where player NAME is top bidder
-
-```/soon```-shows first 50 cakes ending soon
-
-```/bins```-Analyses current bin prices
--Shows 5 cheapest bins
--Shows name of the cheapest bin auctioneer
-
-```/bins NAME_TO_EXCLUDE```-Same as /bins without parameter, but it filters out you bins from specified player (you often don't need to see your bins)
-
-```/top```-Shows current top bidder leaderboard
--Shows players who currently sells the most amount of cakes in AH
-
-```/col NAME```-sky lea for cakes :)
--shows online status, profile name, coins in purse, ah bids, special auctions bought/sold, collected unique cakes in the inventory, missing cakes and amount of cakes needed to complete the bag.
--duplicate cakes in inventory are not shown.
--to refresh inventory api, tell the player you are inspecting to revisit you.
--shows pies too :)
-
-```/help```-shows this message
-
-```/undercuts NAME```-shows better BIN offers that your worst BIN offer
-
-```/delcache```- deletes name cache
-```/changelog```- see bot changes
 """
-    await interaction.response.send_message(help)
+    commands_embed = discord.Embed(description=commands_message, title="Commands")
+
+    await interaction.response.send_message(embeds=[version_embed, deprecation_embed, commands_embed])
 
 
 @tree.command()
