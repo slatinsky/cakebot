@@ -247,6 +247,13 @@ async def delcache(interaction):
 
 
 @tree.command()
+async def version(interaction):
+    version_embed = discord.Embed(description=VERSION_STRING, title="Bot Version")
+
+    await interaction.response.send_message(embed=version_embed)
+
+
+@tree.command()
 async def info(interaction):
     """
     See what this bot is able to do and how
@@ -263,8 +270,6 @@ The bot is currently maintained and worked on by <@188690150975471616>, for any 
 """
     deprecation_embed = discord.Embed(description=deprecation_message, title="Status of this bot")
 
-    version_embed = discord.Embed(description=VERSION_STRING, title="Bot Version")
-
     commands_message = f"""Available commands:
 ```
 /ah NAME
@@ -280,7 +285,7 @@ The bot is currently maintained and worked on by <@188690150975471616>, for any 
 """
     commands_embed = discord.Embed(description=commands_message, title="Commands")
 
-    await interaction.response.send_message(embeds=[version_embed, deprecation_embed, commands_embed])
+    await interaction.response.send_message(embeds=[deprecation_embed, commands_embed])
 
 
 @tree.command()
