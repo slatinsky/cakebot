@@ -85,12 +85,6 @@ class Utils:
         self.download_urls(urls, save_as)
         self.logger.info("Auctions successfully updated")
 
-    def delete_database(self):
-        if os.path.exists('mcnames.db'):
-            # rename with timestamp
-            os.rename('mcnames.db', f'mcnames_{datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}.db')
-            self.logger.info("mcnames.db deleted")
-
     def is_player_online(self, mc_name):
         try:
             mc_uuid = self.get_uuid_from_mc_name(mc_name)
@@ -112,9 +106,9 @@ class Utils:
                     return "Online"
                 else:
                     return "Offline"
-            except KeyError:
-                # TODO: check why/when this error appears
-                return "you_should_never_see_this_error"
+            except KeyError as ex:
+                self.logger.info(f"Can't retrieve online status from player '{mc_name}' because their API settings are disabled")
+                return "Unknown"
         else:
             self.logger.error("is_player_online - ERROR: ", json_player_stats)
             return False
@@ -215,3 +209,8 @@ def chunks(lst, n):  # https://stackoverflow.com/questions/312443/how-do-you-spl
     """Yield successive n-sized chunks from lst."""
     for i in range(0, len(lst), n):
         yield lst[i:i + n]
+
+
+def delete_database():
+    with shelve.open('mcnames') as mcnames:
+        mcnames.clear()

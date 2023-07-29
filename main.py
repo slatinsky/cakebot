@@ -184,7 +184,7 @@ async def soon(interaction):
 
     soon_data = await cakes_obj.auctions_ending_soon(interaction)
     soon_msg = Utils.split_message(msg=soon_data)
-    await interaction.edit_original_response(content=soon_msg[0])
+    await interaction.edit_original_response(content=f"```diff\n{soon_msg[0]}```")
     soon_msg.pop(0)
     for msg in soon_msg:
         await interaction.channel.send(f"```diff\n{msg}```")
@@ -223,8 +223,6 @@ async def tb(interaction, mc_name: str):
     if mc_name is not None:
         tb_data = await cakes_obj.auctions_ending_soon(interaction, None, mc_name)
         await interaction.edit_original_response(content=f"```diff\n{tb_data}```")
-    else:
-        await interaction.response.send_message(f"Invalid syntax, use /tb NAME")
 
 
 @tree.command()
@@ -235,19 +233,15 @@ async def delcache(interaction):
     if await disallow_execute(interaction):
         return
 
-    # if mcnames.db exists, delete it
-    if os.path.exists("mcnames.db"):
-        Utils.delete_database()
-        if os.path.exists("mcnames.db"):
-            await interaction.response.send_message("Failed to delete cache (mcnames.db)")
-        else:
-            await interaction.response.send_message(f"Deleted mcnames.db")
-    else:
-        await interaction.response.send_message("Cache (mcnames.db) does not exist!")
+    Utils.delete_database()
+    await interaction.response.send_message(f"Deleted mcnames database")
 
 
 @tree.command()
 async def version(interaction):
+    """
+    Get the current version of this bot
+    """
     version_embed = discord.Embed(description=VERSION_STRING, title="Bot Version")
 
     await interaction.response.send_message(embed=version_embed)

@@ -222,9 +222,9 @@ class Cakes:
             top_bidder_uuid = self.utils.get_uuid_from_mc_name(top_bidder)
         ret_str = ""
 
-        ret_str += self.incorrect_download_warning()
-
         self.bin_prices_to_var(auctioneer)
+
+        ret_str += self.incorrect_download_warning()
 
         table = TablePrint((2, 10, 5, 10, 10, 22, 18, 10))
         list_not_sorted = []
@@ -297,8 +297,6 @@ class Cakes:
 
     def top(self):
         ret_str = ""
-
-        ret_str += self.incorrect_download_warning()
 
         top_bidders_uuid = {}
         top_auctioneers_uuid = {}
