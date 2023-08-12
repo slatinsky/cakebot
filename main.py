@@ -84,11 +84,7 @@ def git_get_commit_messages():
     for i in range(len(changes)):
         changes[i] = f"v{len(changes) - i + 100}: {changes[i]}"
 
-    # get only last 10 commits, because else the message would be too long
-    changes = changes[:10]
-
     changes = '\n'.join(changes)
-    changes = "last 10 commits:\n" + changes
     return changes
 
 
@@ -316,8 +312,9 @@ async def changelog(interaction):
     """
     if await disallow_execute(interaction):
         return
-
-    await interaction.response.send_message(git_get_commit_messages())
+    
+    with Responder(interaction) as responder:
+        await responder.append("last 10 commits:\n" + git_get_commit_messages())
 
 
 
