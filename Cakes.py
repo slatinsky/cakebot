@@ -5,9 +5,18 @@ import time
 import Utils
 from TablePrint import TablePrint
 from CakeAuction import CakeAuction
-
+from utils.LogController import LogController
 
 class Cakes:
+
+    def __init__(self):
+        self.ah_last_updated = time.time() - 99999
+        self.cakes = None
+        self.cakes = self.extract_cake_auctions_from_json()
+        self.ah_incorrect_pages = 0
+        self.ah_pages_total = 0
+        self.utils = Utils.Utils()
+        self.logger = LogController().get_logger()
 
     def get_latest_cake_year(self):
         latest_year = -1
@@ -27,13 +36,12 @@ class Cakes:
                     ah_dict = json.load(f)
                 except:
                     self.ah_incorrect_pages += 1
-                    print('INVALID FILE', filename)
+                    self.logger.error(f"Invalid file: {filename}")
                     continue
                 if ah_dict['success']:
                     for auction in ah_dict['auctions']:
-                        if 'New Year Cake' in auction['item_name'].strip() and "bag" not in auction[
-                            'item_name'].strip().lower():
-                            # if auction['auctioneer'] != CONF['my_mc_details']['uuid']:
+                        if 'New Year Cake' in auction['item_name'].strip() and "bag" not in auction['item_name'] \
+                                .strip().lower():
                             cake_auction_dict[auction['uuid']] = CakeAuction(auction)
                 else:
                     self.ah_incorrect_pages += 1
@@ -48,35 +56,32 @@ class Cakes:
         return current_year
 
     def try_to_update_ah(self):
-        # print("Skipping downloading AH because DEBUG")
-        # return False
         if self.ah_last_updated + 120 < time.time():
             self.ah_last_updated = time.time()
-            print("Updating AH")
-            Utils.download_auctions()
+            self.logger.info("Updating AH")
+            self.utils.download_auctions()
             self.cakes = self.extract_cake_auctions_from_json()
             return True
         else:
-            print("AH updating skipped")
+            self.logger.info("AH updating skipped")
             return False
-
-    def __init__(self):
-        self.ah_last_updated = time.time() - 99999
-        self.cakes = None
-        self.cakes = self.extract_cake_auctions_from_json()
-        self.ah_incorrect_pages = 0
-        self.ah_pages_total = 0
 
     def incorrect_download_warning(self):
         if self.ah_incorrect_pages != 0:
+            self.logger.warn(msg=f"WARNING: INCOMPLETE DATA SHOWN, BECAUSE HYPIXEL API RETURNED INCOMPLETE DATA! "
+                                 f"Invalid pages " f"{self.ah_incorrect_pages} out of {self.ah_pages_total} pages "
+                                 f"total\n ")
             return f"WARNING: INCOMPLETE DATA SHOWN, BECAUSE HYPIXEL API RETURNED INCOMPLETE DATA! Invalid pages " \
                    f"{self.ah_incorrect_pages} out of {self.ah_pages_total} pages total\n "
         elif self.ah_pages_total == 0:
+            self.logger.warn(msg=f"HYPIXEL API RETURNED NO DATA for some reason (it is currently probably down). "
+                                 f"INCOMPLETE DATA SHOWN (if any)\n")
             return f"WARNING: HYPIXEL API RETURNED NO DATA for some reason (it is currently probably down). " \
                    f"INCOMPLETE DATA SHOWN (if any)\n"
         else:
             return ""
 
+    # TODO: unused?
     def rarest_cakes_in_ah(self):
         cake_counts = {}
         current_year = self.get_current_cake_year()
@@ -100,11 +105,10 @@ class Cakes:
             print(str(year).ljust(4), count)
 
     def bin_prices_to_var(self, ignore_name=None):
-        if not self.try_to_update_ah():
-            print("DEBUG: Updating AH skipped, because it was updated in the last 2 minutes")
+        self.try_to_update_ah()
 
         if ignore_name is not None:
-            ignore_name_uuid = Utils.get_uuid_from_mc_name(ignore_name)
+            ignore_name_uuid = self.utils.get_uuid_from_mc_name(ignore_name)
         else:
             ignore_name_uuid = None
 
@@ -117,11 +121,6 @@ class Cakes:
                         self.bin_cake_years[cake.year] = [cake]
                     else:
                         self.bin_cake_years[cake.year].append(cake)
-
-        # if cake.year not in cake_counts:
-        # 	cake_counts[cake.year] = 1
-        # else:
-        # 	cake_counts[cake.year] += 1
 
         self.max_year_found_in_dict = max(self.bin_cake_years, key=int)
 
@@ -140,17 +139,7 @@ class Cakes:
 
                 self.bin_cheapest_cakes[year] = year_cake_list_5_cheapest
 
-    async def split_and_send(self, ctx, msg):
-        # span = 20
-        # words = msg.split("\n")
-        splited = Utils.split_message(msg)
-        # splited = ["\n".join(words[i:i + span]) for i in range(0, len(words), span)]
-        # pprint(splited)
-        for split in splited:
-            # print(split + "\n")
-            await ctx.send(f"```diff\n{split}```")
-
-    async def analyze_bin_prices(self, ctx, ignore_name=None):
+    async def analyze_bin_prices(self, ctx, ignore_name):
         self.bin_prices_to_var(ignore_name)
 
         ret_str = ""
@@ -160,66 +149,23 @@ class Cakes:
         ret_str += table.print_row(["Year", "BINs", "5 cheapest bins", "Cheapest auctioneer"])
 
         for year in range(self.max_year_found_in_dict + 1):
-            year_cake_list = []
             if year in self.bin_cake_years:
                 year_cake_list_5_cheapest_str = ""
                 for cake_price, cake_id, cake in self.bin_cheapest_cakes[year]:
                     year_cake_list_5_cheapest_str += str(cake_price) + " "
                 ret_str += table.print_row([year, str(len(self.bin_cake_years[year])), year_cake_list_5_cheapest_str,
-                                            Utils.get_mc_name_from_uuid(
+                                            self.utils.get_mc_name_from_uuid(
                                                 self.bin_cheapest_cakes[year][0][2].auctioneer_uuid)])
 
-        await self.split_and_send(ctx, ret_str)
-        # span = 20
-        # words = ret_str.split("\n")
-        # splited = ["\n".join(words[i:i+span]) for i in range(0, len(words), span)]
-        # # pprint(splited)
-        # for split in splited:
-        # 	# print(split + "\n")
-        # 	await ctx.send(f"```{split}```")
+        return ret_str
 
-        # for year in range(max_year_found_in_dict + 1):
-        #
-        # 	count_all = "-----"   ,
-        # 	if year in cake_years:
-        # 		min_p = 999999999
-        # 		max_p = -1
-        # 		for cake in cake_years[year]:
-        # 			if cake.price < min_p:
-        # 				cheapest_bins[cake.year] = cake
-        #
-        # 			min_p = min(min_p, cake.price)
-        # 			max_p = max(max_p, cake.price)
-        #
-        # 		if year in cake_counts:
-        # 			count_all = cake_counts[year]
-        #
-        # 		ret_str += table.print_row([year, str(len(cake_years[year])) + " / " + str(count_all), min_p, max_p, "/ah " +  get_mc_name_from_uuid(cheapest_bins[year].auctioneer_uuid)])
-        # else:
-        # 	ret_str += table.print_row([year, "-----", count_all])
+    async def analyze_undercuts(self, ctx, name):
+        name_uuid = self.utils.get_uuid_from_mc_name(name)
+        if name_uuid is None:
+            return f"Could not get player from name {name}"
 
-        if ctx is None:
-            print(ret_str)
-
-    # else:
-    # 	span = 20
-    # 	words = ret_str.split("\n")
-    # 	splited = ["\n".join(words[i:i+span]) for i in range(0, len(words), span)]
-    # 	# pprint(splited)
-    # 	for split in splited:
-    # 		# print(split + "\n")
-    # 		await ctx.send(f"```{split}```")
-
-    # return f"```{ret_str}```"
-
-    async def analyze_undercuts(self, ctx, name=None):
-        if name is not None:
-            name_uuid = Utils.get_uuid_from_mc_name(name)
         ret_str = ""
-        # if not self.try_to_update_ah():
-        # 	ret_str += "DEBUG: Updating AH skipped, because it was updated in the last 2 minutes\n"
         self.bin_prices_to_var(name)
-        # self.bin_cheapest_cakes[]
 
         name_owned_cakes = {}
         name_best_offers = {}
@@ -234,8 +180,6 @@ class Cakes:
                         name_owned_cakes[cake.year] = []
                         name_owned_cakes[cake.year].append(cake.year)
                         name_best_offers[cake.year] = cake.price
-
-        # name_owned_cakes = sorted(name_owned_cakes)
 
         # for each cake year in ah
         found_undercuts = False
@@ -256,7 +200,7 @@ class Cakes:
                                 if not found_undercut:
                                     ret_str += f"--- {year} - {str(name_offer_in_milions)} ---\n"
 
-                                ret_str += f"Undercut - {str(cake.price).ljust(5)} - {Utils.get_mc_name_from_uuid(cake.auctioneer_uuid)}\n"
+                                ret_str += f"Undercut - {str(cake.price).ljust(5)} - {self.utils.get_mc_name_from_uuid(cake.auctioneer_uuid)}\n"
                                 found_undercut = True
 
                 if found_undercut:
@@ -264,28 +208,23 @@ class Cakes:
 
         if not found_undercuts:
             ret_str += f"No undercuts found for {name}\n"
-        # for ends_in, cake_year, cake_id, cake in name_owned_cakes:
-        # 	print(cake_year)
 
-        await self.split_and_send(ctx, ret_str)
-
-    # print(ret_str)
-    #
+        return ret_str
 
     async def auctions_ending_soon(self, ctx, auctioneer=None, top_bidder=None):
+        auctioneer_uuid = ""
+        top_bidder_uuid = ""
+
         if auctioneer is not None:
-            auctioneer_uuid = Utils.get_uuid_from_mc_name(auctioneer)
+            auctioneer_uuid = self.utils.get_uuid_from_mc_name(auctioneer)
 
         if top_bidder is not None:
-            top_bidder_uuid = Utils.get_uuid_from_mc_name(top_bidder)
+            top_bidder_uuid = self.utils.get_uuid_from_mc_name(top_bidder)
         ret_str = ""
 
-        if not self.try_to_update_ah():
-            ret_str += "DEBUG: Updating AH skipped, because it was updated in the last 2 minutes\n"
+        self.bin_prices_to_var(auctioneer)
 
         ret_str += self.incorrect_download_warning()
-
-        self.bin_prices_to_var(auctioneer)
 
         table = TablePrint((2, 10, 5, 10, 10, 22, 18, 10))
         list_not_sorted = []
@@ -320,10 +259,10 @@ class Cakes:
 
             ends_in = cake.ends_in()
 
-            auctioneer = Utils.get_mc_name_from_uuid(cake.auctioneer_uuid)
+            auctioneer = self.utils.get_mc_name_from_uuid(cake.auctioneer_uuid)
 
             if cake.top_bidder_uuid:
-                top_bidder = Utils.get_mc_name_from_uuid(cake.top_bidder_uuid)
+                top_bidder = self.utils.get_mc_name_from_uuid(cake.top_bidder_uuid)
             else:
                 top_bidder = ""
 
@@ -354,18 +293,10 @@ class Cakes:
             ret_str += table.print_row(row_to_print)
         ret_str += "\n"
 
-        await self.split_and_send(ctx, ret_str)
+        return ret_str
 
-    # print(ret_str)
-    # return f"```{ret_str}```"
-
-    def top(self, ctx=None):
+    def top(self):
         ret_str = ""
-
-        if not self.try_to_update_ah():
-            ret_str += "DEBUG: Updating AH skipped, because it was updated in the last 2 minutes\n"
-
-        ret_str += self.incorrect_download_warning()
 
         top_bidders_uuid = {}
         top_auctioneers_uuid = {}
@@ -395,9 +326,9 @@ class Cakes:
         ret_str += table.print_row(["top bids", "name", "online/offline"])
         i = 0
         for uuid, count in top_bidders_uuid.items():
-            mc_name = Utils.get_mc_name_from_uuid(uuid)
+            mc_name = self.utils.get_mc_name_from_uuid(uuid)
 
-            online_status = Utils.is_player_online(mc_name)
+            online_status = self.utils.is_player_online(mc_name)
             ret_str += table.print_row([count, mc_name, online_status])
             if i == 15:
                 break
@@ -407,9 +338,9 @@ class Cakes:
         ret_str += table.print_row(["auctions", "name", "online/offline"])
         i = 0
         for uuid, count in top_auctioneers_uuid.items():
-            mc_name = Utils.get_mc_name_from_uuid(uuid)
+            mc_name = self.utils.get_mc_name_from_uuid(uuid)
 
-            online_status = Utils.is_player_online(mc_name)
+            online_status = self.utils.is_player_online(mc_name)
             ret_str += table.print_row([count, mc_name, online_status])
             if i == 15:
                 break

@@ -3,21 +3,25 @@ import io
 import json
 import re
 
+import discord
 import nbt
 import requests
 
 import Utils
+from utils import Config
 from TablePrint import TablePrint
+from utils.LogController import LogController
 
 
 class InventoryImporter:
 
-    # count_needed = 5
-    # order = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 69, 70, 71]
+    def __init__(self):
+        self.mc_name = None
+        self.utils = Utils.Utils()
+        self.logger = LogController().get_logger()
 
     def decode_inventory_data_base64(self, raw_data):
         data = nbt.nbt.NBTFile(fileobj=io.BytesIO(base64.b64decode(raw_data)))
-        # print(data.pretty_tree())
         return data
 
     def decode_inventory_data_raw(self, raw_data):
@@ -33,7 +37,7 @@ class InventoryImporter:
                 return cake_year
 
             else:
-                print("year error", cake_description)
+                self.logger.warn(f"Error when getting year of cake: {cake_description}")
 
     def list_of_all_items_in_inventories(self, inventories: list):
         all_items = []
@@ -52,7 +56,6 @@ class InventoryImporter:
                                 item_type = str(item['tag']['ExtraAttributes']['id'])
 
                                 if 'ExtraAttributes' in item["tag"]:
-                                    # print(item["tag"]["ExtraAttributes"])
                                     if 'new_year_cake_bag_data' in item["tag"]["ExtraAttributes"]:
                                         item_storages.append(self.decode_inventory_data_raw(
                                             item["tag"]["ExtraAttributes"]["new_year_cake_bag_data"].value))
@@ -127,7 +130,7 @@ class InventoryImporter:
             return pie_info
 
         except Exception as e:
-            print(e, "pie_item_extra_attributes weird", pie_item_extra_attributes)
+            self.logger.error(e, "pie_item_extra_attributes weird", pie_item_extra_attributes)
             return None
 
     # one pie ExtraAttributes: {TAG_Int('leaderboard_score'): 2858, TAG_String('leaderboard_player'): §cBloozing, TAG_Int('leaderboard_position'): 281, TAG_Int('new_years_cake'): 101, TAG_String('originTag'): EVENT_REWARD, TAG_String('id'): SPOOKY_PIE, TAG_String('event'): spooky_festival_83, TAG_String('uuid'): ccc5d8d2-b9dc-45c5-81bb-9f13d3047249, TAG_String('timestamp'): 11/17/20 7:41 PM}
@@ -137,13 +140,11 @@ class InventoryImporter:
             if 'ExtraAttributes' in item["tag"]:
                 if 'id' in item['tag']['ExtraAttributes']:
                     item_type = str(item['tag']['ExtraAttributes']['id'])
-                    # print(item_type)
                     if item_type == 'SPOOKY_PIE':
                         pie_info = self.get_pie_info(item['tag']['ExtraAttributes'])
                         if pie_info is not None:
                             pie_list.append(pie_info)
 
-        # pprint(pie_list)
         return pie_list
 
     def get_stats(self, personal_profile, profile):
@@ -157,7 +158,7 @@ class InventoryImporter:
         if 'cute_name' in profile:
             stats['cute_name'] = profile['cute_name']
         else:
-            print("CUTE_NAME NOT FOUND", profile)
+            self.logger.debug(f"Cute name found: {profile}")
 
         if "coin_purse" in personal_profile:
             stats['purse'] = personal_profile['coin_purse']
@@ -173,49 +174,40 @@ class InventoryImporter:
 
         return stats
 
-    def get_current_skyblock_profile_uuid(self, uuid: str):
+    def get_stats_from_uuid(self, uuid: str):
         data = requests.get(
-            "https://api.hypixel.net/skyblock/profiles?key=" + Utils.API_KEY + "&uuid=" + uuid).json()
+            "https://api.hypixel.net/skyblock/profiles?key=" + Config.API_KEY + "&uuid=" + uuid).json()
 
         last_save = 0
         stats = {}
 
         if 'profiles' in data:
+            if data['profiles'] is None:
+                self.logger.warn(f"Profiles is None for UUID {uuid}. Possibly not migrated player.")
+                return None
+
             for profile in data['profiles']:
                 personal_profile = profile['members'][uuid]
-                # print("PROF", personal_profile)
-                # print(profile['cute_name'], personal_profile['last_save'])
-                if 'last_save' in profile:
-                    if last_save < profile['last_save']:
-                        last_save = profile['last_save']
-                        stats = self.get_stats(personal_profile, profile)
-                    # print("found profile", stats['cute_name'])
-                    else:
-                        pass
-                # print("skipped profile")
+                if profile['selected'] is True:
+                    stats = self.get_stats(personal_profile, profile)
+                    self.logger.info(f"Found selected profile: {profile['cute_name']}")
                 else:
-                    print("LAST SAVE NOT IN personal_profile")
+                    self.logger.info(f"Profile {profile['cute_name']} is not selected")
         else:
-            print('PROFILES NOT FOUND')
-        # profile = data['profile']
-        # personal_profile = data['profile']['members'][uuid]
-        # stats = self.get_stats(data['profile'], profile)
+            self.logger.warn(f"Profiles not found for '{uuid}'")
 
         return stats
 
-    #
-    # 	# print(current_profile, current_profile_uuid)
+    def get_inventory_details(self, mc_uuid: str, profile_uuid: str):
 
-    def get_profile_details(self, mc_uuid: str, profile_uuid: str, ret_str=""):
-        global MAX_CAKE_YEAR
+        inventory_embed = discord.Embed(title="Inventory", description="")
+        pie_str = ""
 
-        ret_str += "\nInventory:\n"
         data = requests.get(
-            'https://api.hypixel.net/skyblock/profile?key=' + Utils.API_KEY + '&profile=' + profile_uuid).json()
+            'https://api.hypixel.net/skyblock/profile?key=' + Config.API_KEY + '&profile=' + profile_uuid).json()
         current_member = data['profile']['members'][mc_uuid]
 
         inventories = []
-        # print("\n\n\nget_profile_details current_member:", current_member, "\n\n\n")
         if 'talisman_bag' in current_member:
             inventories = [current_member['talisman_bag']['data'], current_member['ender_chest_contents']['data'],
                            current_member['inv_contents']['data']]
@@ -229,72 +221,68 @@ class InventoryImporter:
             if 'data' in current_member['personal_vault_contents']:
                 inventories.append(current_member['personal_vault_contents']['data'])
 
-        elif 'ender_chest_contents' in current_member:
-            ret_str += "Talisman bag not unlocked"
-            return ret_str
-        else:
-            ret_str += "This player does not have his inventory api enabled"
-            return ret_str
+        if 'ender_chest_contents' in current_member:
+            if 'data' in current_member['ender_chest_contents']:
+                inventories.append(current_member['ender_chest_contents']['data'])
+
+        if not inventories:
+            inventory_embed.description += "This player does not have his inventory api enabled"
+            return
 
         cake_list = self.find_cakes_in_item_list(self.list_of_all_items_in_inventories(inventories))
         pie_list = self.find_pies_in_item_list(self.list_of_all_items_in_inventories(inventories))
 
-        # if len(cake_list) == 0:
-        # 	print("No cake was found in the inventory. Please enable api access (/sbmenu -> settings -> API settings -> API: inventory - click to enable). After turning on api, go to hub and visit me again please")
-        # 	return
-
         cake_set = set(cake_list)
-        # print("Found cakes verbose", sorted(list(cake_set)))
 
-        ret_str += f"Found in inventory: {Utils.list_to_ranges(sorted(list(cake_set)))}\n"
+        inventory_embed.description += f"Found in inventory: {Utils.list_to_ranges(sorted(list(cake_set)))}\n"
 
         not_owned_cakes = set()
 
-        for i in range(0, MAX_CAKE_YEAR):
+        for i in range(0, Config.MAX_CAKE_YEAR):
             if i not in cake_set:
                 not_owned_cakes.add(i)
 
-        ret_str += f"Not found in inventory: {Utils.list_to_ranges(sorted(list(not_owned_cakes)))}\n"
+        inventory_embed.description += f"Not found in inventory: {Utils.list_to_ranges(sorted(list(not_owned_cakes)))}\n"
         count_needed = 54 - len(cake_set)
-        ret_str += f"Needed cakes to complete the bag: {count_needed}\n"
+        inventory_embed.description += f"Needed cakes to complete the bag: {count_needed}\n"
 
-        ret_str += "\nSpooky pies:\n```\n"
         if len(pie_list) == 0:
-            ret_str += "No spooky pies found"
+            pie_str += "No spooky pies found"
         else:
             table = TablePrint((17, 10, 4, 6, 6))
-            ret_str += table.print_row(["Name", "rank", "year", "position", "score"])
+            pie_str += table.print_row(["Name", "rank", "year", "position", "score"])
             for pie in pie_list:
-                ret_str += table.print_row(
+                pie_str += table.print_row(
                     [pie['player'], pie['rank'], pie['year'], pie['position'] if (pie['position'] != "-1") else '?',
                      pie['score'] if (pie['score'] != "-1") else '?'])
-        ret_str += "```"
 
-        return ret_str
+        return inventory_embed, pie_str
 
-    def offer_cakes(self, mc_name):
+    async def offer_cakes(self, mc_name, interaction):
         self.mc_name = mc_name
 
-        ret_str = ""
+        await interaction.response.send_message(content=f"Loading data for player {mc_name}...")
 
         try:
-            mc_uuid = Utils.get_uuid_from_mc_name(self.mc_name)
-            stats = self.get_current_skyblock_profile_uuid(mc_uuid)
+            mc_uuid = self.utils.get_uuid_from_mc_name(self.mc_name)
+            stats = self.get_stats_from_uuid(mc_uuid)
 
-            print("stats:" + str(stats))
+            if stats is None:
+                await interaction.edit_original_response(content=f"Stats could not be retrieved for player '{mc_name}'")
+
+            self.logger.debug("stats:" + str(stats))
+            stats_embed = discord.Embed(title=mc_name)
 
             if 'current_profile' in stats:
-                ret_str += f"{mc_name} ({stats['current_profile']}) - {Utils.is_player_online(mc_name)}:\n"
-            else:
-                ret_str += f"{mc_name}:\n"
+                stats_embed.description = f"{stats['current_profile']} - {self.utils.is_player_online(mc_name)}\n"
 
             if 'purse' in stats and stats['purse'] is not None:
-                ret_str += f"Purse: {Utils.k_to_mil(int(stats['purse']) / 1000)} mil\n"
+                stats_embed.description += f"Purse: {Utils.k_to_mil(int(stats['purse']) / 1000)} mil\n"
 
-            ret_str += f"\nAH:\n"
+            ah_embed = discord.Embed(title="AH", description="")
 
             if 'auctions_bids' in stats:
-                ret_str += f"Bids: {int(stats['auctions_bids'])}\n"
+                ah_embed.description += f"Bids: {int(stats['auctions_bids'])}\n"
 
             if 'auctions_sold_special' not in stats:
                 stats['auctions_sold_special'] = 0
@@ -302,16 +290,25 @@ class InventoryImporter:
             if 'auctions_bought_special' not in stats:
                 stats['auctions_bought_special'] = 0
 
-            ret_str += f"Special bought/sold: {int(stats['auctions_bought_special'])}/{int(stats['auctions_sold_special'])}\n"
+            ah_embed.description += f"Special bought/sold: " \
+                                    f"{int(stats['auctions_bought_special'])}/{int(stats['auctions_sold_special'])}\n"
 
             # if 'purse' in stats:
             # 	return f"This player does not have his inventory api enabled\n"
             # else:
             if 'current_profile_uuid' in stats:
-                ret_str = self.get_profile_details(mc_uuid, stats['current_profile_uuid'], ret_str)
-            return ret_str
+                inventory_embed, pie_str = self.get_inventory_details(mc_uuid, stats['current_profile_uuid'])
+
+            await interaction.edit_original_response(embeds=[stats_embed, ah_embed, inventory_embed], content="")
+
+            await interaction.channel.send("Spooky Pies:")
+            if pie_str is not None:
+                if len(pie_str) < 1995:
+                    await interaction.channel.send(f"```diff\n{pie_str}```")
+                else:
+                    msgs = Utils.split_message(pie_str)
+                    for msg in msgs:
+                        await interaction.channel.send(f"```diff\n{msg}```")
+
         except json.decoder.JSONDecodeError:
             return f"Hypixel api is offline or player not found :( Try again later"
-
-    def __init__(self):
-        self.mc_name = None

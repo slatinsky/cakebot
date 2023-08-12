@@ -1,23 +1,32 @@
 import os
 
+import discord
 import nest_asyncio
 import requests
-from discord.ext import commands
+from discord import app_commands
+# from discord.ext import commands
 
 import Utils
 from Cakes import Cakes
 from InventoryImporter import InventoryImporter
+from utils import Config
+from utils import LogController
+
+log_controller = LogController.LogController()
+logger = log_controller.get_logger()
 
 nest_asyncio.apply()
 
-if len(Utils.ALLOWED_CHANNEL_IDS) == 0:
-    print("No allowed channel IDs found in config.ini")
+logger.info("Starting up cakebot...")
+
+if len(Config.ALLOWED_CHANNEL_IDS) == 0:
+    logger.error("No allowed channel IDs found in config")
     exit()
 
 
 # verify if API_KEY is valid
 def verify_api_key():
-    r = requests.get('https://api.hypixel.net/player?key=' + Utils.API_KEY + '&uuid=' + Utils.SLADA_UUID)
+    r = requests.get('https://api.hypixel.net/player?key=' + Config.API_KEY + '&uuid=' + Config.SLADA_UUID)
     if r.status_code == 200:
         return True
     else:
@@ -25,10 +34,10 @@ def verify_api_key():
 
 
 if not verify_api_key():
-    print("Invalid hypixel api_key")
+    logger.error("Invalid Hypixel API key!")
     exit()
 else:
-    print("Hypixel api_key is valid")
+    logger.info("Hypixel API key is valid")
 
 
 def get_commit_hash():
@@ -69,212 +78,220 @@ else:
     BETA = ""
 VERSION_STRING = f"Bot version{BETA} {get_commit_index()} ({get_commit_hash()}, {get_commit_time()})"
 
-print(VERSION_STRING)
+logger.info(f"Running {VERSION_STRING}")
 
 # make dir "auction" if not exists
 if not os.path.exists('auction'):
     os.makedirs('auction')
 
 cakes_obj = Cakes()
-bot = commands.Bot(command_prefix=Utils.COMMAND_PREFIX, help_command=None)
+intents = discord.Intents.default()
+intents.message_content = True
+client = discord.Client(intents=intents)
+# bot = commands.Bot(intents=intents)
+tree = app_commands.CommandTree(client)
 
 
-@bot.event
-async def on_message(message):
-    print(message.content)
-    await bot.process_commands(message)
-
-
-@bot.event
+@client.event
 async def on_ready():  # This function will be run by the discord library when the bot has logged in
-    print("Logged in as " + bot.user.name)
+    await tree.sync()
+    logger.info(f"Bot logged in as {client.user.name}")
 
 
-async def is_dm(ctx):
-    # print(ctx.author.id)
+async def disallow_execute(interaction):
     deny_author_ids = []  # copy author id from discord
 
-    if ctx.author.id in deny_author_ids:
+    if interaction.user.id in deny_author_ids:
+        await interaction.response.send_message("You are not allowed to use this bot.", ephemeral=True)
         return True  # do not allow commands from these users
 
-    if ctx.message.channel.id not in Utils.ALLOWED_CHANNEL_IDS:
-        print("not in allowed channel")
+    if interaction.channel_id not in Config.ALLOWED_CHANNEL_IDS:
+        await interaction.response.send_message("This channel is not allowed for this bot.", ephemeral=True)
         return True  # not correct channel ID, ignore command
 
-    if ctx.guild is None:
-        await ctx.send("Don't be shy! Talk with me in bot-channel!")
+    if interaction.guild is None:
+        await interaction.send("Don't be shy! Talk with me in bot-channel!")
         return True
     else:
         return False
 
 
-@bot.command()
-async def col(ctx, mc_name):
-    if await is_dm(ctx):
+@tree.command(name="col")
+async def col(interaction, mc_name: str):
+    """
+    Displays information over specific player
+    """
+    if await disallow_execute(interaction):
+        return True
+
+    await InventoryImporter().offer_cakes(mc_name, interaction)
+
+
+@tree.command()
+async def top(interaction):
+    """
+    Shows current top bidder leaderboard
+    and players who currently sell the most amount of cakes in AH
+    """
+    if await disallow_execute(interaction):
         return
-    msg = InventoryImporter().offer_cakes(mc_name)
-    if len(msg) > 1995:
-        await cakes_obj.split_and_send(ctx, msg.replace('```', ''))
-    else:
-        await ctx.send(msg)
+    await interaction.response.send_message("Loading...")
+
+    await interaction.edit_original_response(content=cakes_obj.top())
 
 
-@bot.command()
-async def top(ctx):
-    if await is_dm(ctx):
-        return
-
-    await ctx.send(cakes_obj.top(None))
-
-
-@bot.command()
-async def uc(ctx, mc_name=None):
-    if await is_dm(ctx):
-        return
-
-    if mc_name is not None:
-        await cakes_obj.analyze_undercuts(ctx, mc_name)
-    else:
-        await ctx.send(f"Invalid syntax, use {Utils.COMMAND_PREFIX}uc NAME")
-
-
-@bot.command()
-async def undercuts(ctx, mc_name=None):
-    if await is_dm(ctx):
+@tree.command()
+async def undercuts(interaction, mc_name: str):
+    """
+    See auctions where given player was undercut
+    """
+    if await disallow_execute(interaction):
         return
 
     if mc_name is not None:
-        await cakes_obj.analyze_undercuts(ctx, mc_name)
+        await interaction.response.send_message("Loading...")
+
+        response_msg = await cakes_obj.analyze_undercuts(interaction, mc_name)
+
+        await interaction.edit_original_response(content=response_msg)
+
+
+@tree.command(name="bins")
+async def bins(interaction, name_to_exclude: str = None):
+    """
+    Analysed current bin prices and show 5 cheapest bins
+    """
+    if await disallow_execute(interaction):
+        return
+    await interaction.response.send_message("Loading...")
+
+    bins_data = await cakes_obj.analyze_bin_prices(interaction, name_to_exclude)
+    bins_msg = Utils.split_message(bins_data)
+    for msg in bins_msg:
+        await interaction.channel.send(f"```diff\n{msg}```")
+    await interaction.edit_original_response(content="BIN Overview:")
+
+
+@tree.command()
+async def soon(interaction):
+    """
+    Show all cake auctions that are ending soon
+    """
+    if await disallow_execute(interaction):
+        return
+
+    await interaction.response.send_message("Loading...")
+
+    soon_data = await cakes_obj.auctions_ending_soon(interaction)
+    soon_msg = Utils.split_message(msg=soon_data)
+    await interaction.edit_original_response(content=f"```diff\n{soon_msg[0]}```")
+    soon_msg.pop(0)
+    for msg in soon_msg:
+        await interaction.channel.send(f"```diff\n{msg}```")
+
+
+@tree.command()
+async def ah(interaction, mc_name: str):
+    """
+    Show Cake Auctions for given player name
+    """
+    if await disallow_execute(interaction):
+        return
+
+    if mc_name is not None:
+        await interaction.response.send_message("Loading...")
+        ah_data = await cakes_obj.auctions_ending_soon(interaction, mc_name)
+        ah_msgs = Utils.split_message(ah_data)
+        for msg in ah_msgs:
+            await interaction.channel.send(f"```diff\n{msg}```")
+        await interaction.edit_original_response(content=f"AH data for {mc_name}:")
+
     else:
-        await ctx.send(f"Invalid syntax, use {Utils.COMMAND_PREFIX}undercuts NAME")
+        await interaction.response.send_message(f"Invalid syntax, use /ah NAME")
 
 
-@bot.command()
-async def bins(ctx, mc_name=None):
-    if await is_dm(ctx):
+@tree.command()
+async def tb(interaction, mc_name: str):
+    """
+    Show auctions where given player is top bidder
+    """
+    if await disallow_execute(interaction):
         return
 
-    await cakes_obj.analyze_bin_prices(ctx, mc_name)
+    await interaction.response.send_message("Loading...")
+
+    if mc_name is not None:
+        tb_data = await cakes_obj.auctions_ending_soon(interaction, None, mc_name)
+        await interaction.edit_original_response(content=f"```diff\n{tb_data}```")
 
 
-@bot.command()
-async def soon(ctx):
-    if await is_dm(ctx):
+@tree.command()
+async def delcache(interaction):
+    """
+    Used to refresh cached mc names
+    """
+    if await disallow_execute(interaction):
         return
 
-    await cakes_obj.auctions_ending_soon(ctx)
+    Utils.delete_database()
+    await interaction.response.send_message(f"Deleted mcnames database")
 
 
-@bot.command()
-async def ah(ctx, name=None):
-    if await is_dm(ctx):
+@tree.command()
+async def version(interaction):
+    """
+    Get the current version of this bot
+    """
+    version_embed = discord.Embed(description=VERSION_STRING, title="Bot Version")
+
+    await interaction.response.send_message(embed=version_embed)
+
+
+@tree.command()
+async def info(interaction):
+    """
+    See what this bot is able to do and how
+    """
+    if await disallow_execute(interaction):
         return
 
-    if name is not None:
-        await cakes_obj.auctions_ending_soon(ctx, name)
-    else:
-        await ctx.send(f"Invalid syntax, use {Utils.COMMAND_PREFIX}ah NAME")
-
-
-@bot.command()
-async def version(ctx, name=None):
-    if await is_dm(ctx):
-        return
-
-    await ctx.send(VERSION_STRING)
-
-
-@bot.command()
-async def tb(ctx, name=None):
-    if await is_dm(ctx):
-        return
-
-    if name is not None:
-        await cakes_obj.auctions_ending_soon(ctx, None, name)
-    else:
-        await ctx.send(f"Invalid syntax, use !bids NAME")
-
-
-@bot.command()
-async def delcache(ctx, name=None):
-    if await is_dm(ctx):
-        return
-
-    # if mcnames.db exists, delete it
-    if os.path.exists("mcnames.db"):
-        Utils.delete_database()
-        if os.path.exists("mcnames.db"):
-            await ctx.send("Failed to delete cache (mcnames.db)")
-        else:
-            await ctx.send(f"Deleted mcnames.db")
-    else:
-        await ctx.send("Cache (mcnames.db) does not exist!")
-
-
-@bot.command()
-async def help(ctx):
-    if await is_dm(ctx):
-        return
-    print("printing help")
-
-    help = f"""
-Deprecation warning:
+    deprecation_message = f"""
 This cake bot is deprecated. That means, that I (Slada) am not playing the game anymore and I can't improve the bot. I will try to keep the bot online and do small bug fixes. I promise, that the bot will stay online at least till 2022-01-01.
 
 Turquoise_Fish sadly isn't working on a replacement bot :(
 
-Available commands:
-```
-{Utils.COMMAND_PREFIX}ah NAME
-{Utils.COMMAND_PREFIX}tb NAME
-{Utils.COMMAND_PREFIX}soon
-{Utils.COMMAND_PREFIX}bins
-{Utils.COMMAND_PREFIX}bins NAME_TO_EXCLUDE
-{Utils.COMMAND_PREFIX}top
-{Utils.COMMAND_PREFIX}col NAME
-{Utils.COMMAND_PREFIX}help
-{Utils.COMMAND_PREFIX}undercuts NAME
-```
-
-```{Utils.COMMAND_PREFIX}ah NAME```-it allows you to quickly optimize your auctions, because only cheapest bin sells.
--bins in cheapest bins column don't include your bins (same as {Utils.COMMAND_PREFIX}bins NAME_TO_EXCLUDE command)
-
-```{Utils.COMMAND_PREFIX}tb NAME```- shows auctions where player NAME is top bidder
-
-```{Utils.COMMAND_PREFIX}soon```-shows first 50 cakes ending soon
-
-```{Utils.COMMAND_PREFIX}bins```-Analyses current bin prices
--Shows 5 cheapest bins
--Shows name of the cheapest bin auctioneer
-
-```{Utils.COMMAND_PREFIX}bins NAME_TO_EXCLUDE```-Same as {Utils.COMMAND_PREFIX}bins without parameter, but it filters out you bins from specified player (you often don't need to see your bins)
-
-```{Utils.COMMAND_PREFIX}top```-Shows current top bidder leaderboard
--Shows players who currently sells the most amount of cakes in AH
-
-```{Utils.COMMAND_PREFIX}col NAME```-sky lea for cakes :)
--shows online status, profile name, coins in purse, ah bids, special auctions bought/sold, collected unique cakes in the inventory, missing cakes and amount of cakes needed to complete the bag.
--duplicate cakes in inventory are not shown.
--to refresh inventory api, tell the player you are inspecting to revisit you.
--shows pies too :)
-
-```{Utils.COMMAND_PREFIX}help```-shows this message
-
-```{Utils.COMMAND_PREFIX}undercuts NAME```-shows better BIN offers that your worst BIN offer
-
-```{Utils.COMMAND_PREFIX}delcache```- deletes name cache
-```{Utils.COMMAND_PREFIX}changelog```- see bot changes
+The bot is currently maintained and worked on by <@188690150975471616>, for any questions/improvements message/ping me!
 """
-    await ctx.send(help)
+    deprecation_embed = discord.Embed(description=deprecation_message, title="Status of this bot")
+
+    commands_message = f"""Available commands:
+```
+/ah NAME
+/tb NAME
+/soon
+/bins
+/bins NAME_TO_EXCLUDE
+/top
+/col NAME
+/info
+/undercuts NAME
+```
+"""
+    commands_embed = discord.Embed(description=commands_message, title="Commands")
+
+    await interaction.response.send_message(embeds=[deprecation_embed, commands_embed])
 
 
-@bot.command()
-async def changelog(ctx, name=None):
-    if await is_dm(ctx):
+@tree.command()
+async def changelog(interaction):
+    """
+    See what has changed in this bot latest
+    """
+    if await disallow_execute(interaction):
         return
 
-    await ctx.send(git_get_commit_messages())
+    await interaction.response.send_message(git_get_commit_messages())
 
 
 # Run the discord bot
-bot.run(Utils.DISCORD_API_KEY)
+client.run(Config.DISCORD_API_KEY, log_handler=None)
