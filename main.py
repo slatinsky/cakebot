@@ -271,20 +271,6 @@ async def version(interaction):
     Get the current version of this bot
     """
     version_embed = discord.Embed(description=VERSION_STRING, title="Bot Version")
-    print("version - 1", flush=True)
-
-    with Responder(interaction) as responder:
-
-        print("version - 2", flush=True)
-        await responder.append("Loading...")
-        print("version - 3", flush=True)
-        await responder.append("Loading...")
-        print("version - 4", flush=True)
-        await responder.append(version_embed)
-
-    print("version - 5", flush=True)
-    
-
     await interaction.response.send_message(embed=version_embed)
 
 
