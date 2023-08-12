@@ -69,19 +69,9 @@ class Cakes:
 
     async def incorrect_download_warning(self, responder: Responder):
         if self.ah_incorrect_pages != 0:
-            self.logger.warn(msg=f"WARNING: INCOMPLETE DATA SHOWN, BECAUSE HYPIXEL API RETURNED INCOMPLETE DATA! "
-                                 f"Invalid pages " f"{self.ah_incorrect_pages} out of {self.ah_pages_total} pages "
-                                 f"total\n ")
-            return f"WARNING: INCOMPLETE DATA SHOWN, BECAUSE HYPIXEL API RETURNED INCOMPLETE DATA! Invalid pages " \
-                   f"{self.ah_incorrect_pages} out of {self.ah_pages_total} pages total\n "
+            await responder.append(f"hypixel returned incorrect data, some cakes may be missing\ninvalid pages: {self.ah_incorrect_pages} out of {self.ah_pages_total} total")
         elif self.ah_pages_total == 0:
             await responder.append("no AH pages - hypixel api is probably down. Try again later")
-            self.logger.warn(msg=f"HYPIXEL API RETURNED NO DATA for some reason (it is currently probably down). "
-                                 f"INCOMPLETE DATA SHOWN (if any)\n")
-            return f"WARNING: HYPIXEL API RETURNED NO DATA for some reason (it is currently probably down). " \
-                   f"INCOMPLETE DATA SHOWN (if any)\n"
-        else:
-            return ""
 
     # TODO: unused?
     def rarest_cakes_in_ah(self):
@@ -213,7 +203,7 @@ class Cakes:
 
         return ret_str
 
-    async def auctions_ending_soon(self, ctx, auctioneer=None, top_bidder=None):
+    async def auctions_ending_soon(self, responder: Responder, auctioneer=None, top_bidder=None):
         auctioneer_uuid = ""
         top_bidder_uuid = ""
 
@@ -224,9 +214,9 @@ class Cakes:
             top_bidder_uuid = self.utils.get_uuid_from_mc_name(top_bidder)
         ret_str = ""
 
-        self.bin_prices_to_var(auctioneer)
+        await self.bin_prices_to_var(responder, auctioneer)
 
-        ret_str += self.incorrect_download_warning()
+        await self.incorrect_download_warning(responder)
 
         table = TablePrint((2, 10, 5, 10, 10, 22, 18, 10))
         list_not_sorted = []
@@ -288,6 +278,9 @@ class Cakes:
             list_to_print.append(
                 [is_cheapest, time_e, cake.year, cake.price, cheapest_bin, str(auctioneer), top_bidder])
             counter += 1
+
+        if len(list_to_print) == 0:
+            return "No auctions found"
 
         ret_str += table.print_row([".", "Time", "year", "price", "ch. bin", "auctioneer", "top bidder"])
 

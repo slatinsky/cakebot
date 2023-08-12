@@ -188,9 +188,10 @@ async def soon(interaction):
     if await disallow_execute(interaction):
         return
 
-    await interaction.response.send_message("Loading...")
+    responder = Responder(interaction)
+    await responder.send("Loading...")
 
-    soon_data = await cakes_obj.auctions_ending_soon(interaction)
+    soon_data = await cakes_obj.auctions_ending_soon(responder)
     soon_msg = Utils.split_message(msg=soon_data)
     await interaction.edit_original_response(content=f"```diff\n{soon_msg[0]}```")
     soon_msg.pop(0)
@@ -205,17 +206,20 @@ async def ah(interaction, mc_name: str):
     """
     if await disallow_execute(interaction):
         return
+    
+    responder = Responder(interaction)
 
     if mc_name is not None:
-        await interaction.response.send_message("Loading...")
-        ah_data = await cakes_obj.auctions_ending_soon(interaction, mc_name)
+        await responder.send("Loading...")
+        ah_data = await cakes_obj.auctions_ending_soon(responder, mc_name)
         ah_msgs = Utils.split_message(ah_data)
+        print(ah_msgs)
         for msg in ah_msgs:
             await interaction.channel.send(f"```diff\n{msg}```")
         await interaction.edit_original_response(content=f"AH data for {mc_name}:")
 
     else:
-        await interaction.response.send_message(f"Invalid syntax, use /ah NAME")
+        await responder.send("Invalid syntax, use /ah NAME")
 
 
 @tree.command()
@@ -225,11 +229,12 @@ async def tb(interaction, mc_name: str):
     """
     if await disallow_execute(interaction):
         return
-
-    await interaction.response.send_message("Loading...")
+    
+    responder = Responder(interaction)
+    await responder.send("Loading...")
 
     if mc_name is not None:
-        tb_data = await cakes_obj.auctions_ending_soon(interaction, None, mc_name)
+        tb_data = await cakes_obj.auctions_ending_soon(responder, None, mc_name)
         await interaction.edit_original_response(content=f"```diff\n{tb_data}```")
 
 
