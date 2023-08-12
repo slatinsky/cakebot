@@ -5,6 +5,7 @@ import time
 import Utils
 from TablePrint import TablePrint
 from CakeAuction import CakeAuction
+from Responder import Responder
 from utils.LogController import LogController
 
 class Cakes:
@@ -55,18 +56,18 @@ class Cakes:
 
         return current_year
 
-    def try_to_update_ah(self):
+    async def try_to_update_ah(self, responder: Responder):
         if self.ah_last_updated + 120 < time.time():
             self.ah_last_updated = time.time()
-            self.logger.info("Updating AH")
-            self.utils.download_auctions()
+            await responder.append("Updating AH")
+            await self.utils.download_auctions(responder)
             self.cakes = self.extract_cake_auctions_from_json()
             return True
         else:
-            self.logger.info("AH updating skipped")
+            await responder.append("AH updating skipped")
             return False
 
-    def incorrect_download_warning(self):
+    async def incorrect_download_warning(self, responder: Responder):
         if self.ah_incorrect_pages != 0:
             self.logger.warn(msg=f"WARNING: INCOMPLETE DATA SHOWN, BECAUSE HYPIXEL API RETURNED INCOMPLETE DATA! "
                                  f"Invalid pages " f"{self.ah_incorrect_pages} out of {self.ah_pages_total} pages "
@@ -74,6 +75,7 @@ class Cakes:
             return f"WARNING: INCOMPLETE DATA SHOWN, BECAUSE HYPIXEL API RETURNED INCOMPLETE DATA! Invalid pages " \
                    f"{self.ah_incorrect_pages} out of {self.ah_pages_total} pages total\n "
         elif self.ah_pages_total == 0:
+            await responder.append("no AH pages - hypixel api is probably down. Try again later")
             self.logger.warn(msg=f"HYPIXEL API RETURNED NO DATA for some reason (it is currently probably down). "
                                  f"INCOMPLETE DATA SHOWN (if any)\n")
             return f"WARNING: HYPIXEL API RETURNED NO DATA for some reason (it is currently probably down). " \
@@ -104,8 +106,8 @@ class Cakes:
         for year, count in cake_counts.items():
             print(str(year).ljust(4), count)
 
-    def bin_prices_to_var(self, ignore_name=None):
-        self.try_to_update_ah()
+    async def bin_prices_to_var(self, responder: Responder, ignore_name=None):
+        await self.try_to_update_ah(responder)
 
         if ignore_name is not None:
             ignore_name_uuid = self.utils.get_uuid_from_mc_name(ignore_name)
@@ -139,11 +141,11 @@ class Cakes:
 
                 self.bin_cheapest_cakes[year] = year_cake_list_5_cheapest
 
-    async def analyze_bin_prices(self, ctx, ignore_name):
-        self.bin_prices_to_var(ignore_name)
+    async def analyze_bin_prices(self, ctx, ignore_name, responder: Responder):
+        await self.bin_prices_to_var(responder, ignore_name)
 
         ret_str = ""
-        ret_str += self.incorrect_download_warning()
+        ret_str += await self.incorrect_download_warning(responder)
 
         table = TablePrint((5, 5, 30, 8, 20))
         ret_str += table.print_row(["Year", "BINs", "5 cheapest bins", "Cheapest auctioneer"])
@@ -295,7 +297,7 @@ class Cakes:
 
         return ret_str
 
-    def top(self):
+    def top(self, responder: Responder):
         ret_str = ""
 
         top_bidders_uuid = {}

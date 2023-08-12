@@ -1,4 +1,5 @@
 import os
+from Responder import Responder
 
 import discord
 import nest_asyncio
@@ -139,9 +140,10 @@ async def top(interaction):
     """
     if await disallow_execute(interaction):
         return
-    await interaction.response.send_message("Loading...")
-
-    await interaction.edit_original_response(content=cakes_obj.top())
+    
+    responder = Responder(interaction)
+    await responder.send("Loading...")
+    await responder.edit(content=cakes_obj.top(responder))
 
 
 @tree.command()
@@ -167,13 +169,15 @@ async def bins(interaction, name_to_exclude: str = None):
     """
     if await disallow_execute(interaction):
         return
-    await interaction.response.send_message("Loading...")
+    responder = Responder(interaction)
+    await responder.send("Loading...")
 
-    bins_data = await cakes_obj.analyze_bin_prices(interaction, name_to_exclude)
+    bins_data = await cakes_obj.analyze_bin_prices(interaction, name_to_exclude, responder)
     bins_msg = Utils.split_message(bins_data)
     for msg in bins_msg:
         await interaction.channel.send(f"```diff\n{msg}```")
-    await interaction.edit_original_response(content="BIN Overview:")
+
+    await responder.edit("BIN Overview:")
 
 
 @tree.command()

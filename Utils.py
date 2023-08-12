@@ -7,6 +7,7 @@ import time
 
 import aiohttp
 import requests
+from Responder import Responder
 
 from utils import Config
 from utils.LogController import LogController
@@ -57,10 +58,10 @@ class Utils:
             else:
                 self.logger.error("Error in number_of_pages")
 
-    def download_auctions(self):
+    async def download_auctions(self, responder: Responder):
         global cake_auctions_json_list
         global cake_auction_list
-        self.logger.info("Updating all auctions")
+        await responder.append("Updating all auctions")
         for filename in os.listdir('auction'):
             os.remove('auction/' + filename)
 
@@ -68,7 +69,7 @@ class Utils:
         with open(r'auction/0.json', 'wb') as f:
             f.write(r.content)
         number_of_pages = self.get_number_of_pages()
-        self.logger.info(f"Downloading {number_of_pages} pages")
+        await responder.append(f"Downloading {number_of_pages} pages")
 
         if number_of_pages is None:
             self.logger.warn("number_of_pages is None for some reason, "
@@ -83,7 +84,7 @@ class Utils:
             save_as[url] = r'auction/' + str(page_number) + '.json'
 
         self.download_urls(urls, save_as)
-        self.logger.info("Auctions successfully updated")
+        await responder.append("Auctions successfully updated")
 
     def is_player_online(self, mc_name):
         try:
