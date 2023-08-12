@@ -59,12 +59,12 @@ class Cakes:
     async def try_to_update_ah(self, responder: Responder):
         if self.ah_last_updated + 120 < time.time():
             self.ah_last_updated = time.time()
-            await responder.append("Updating AH")
+            await responder.append_header("Updating AH")
             await self.utils.download_auctions(responder)
             self.cakes = self.extract_cake_auctions_from_json()
             return True
         else:
-            await responder.append("AH updating skipped")
+            await responder.append_header("AH updating skipped")
             return False
 
     async def incorrect_download_warning(self, responder: Responder):
@@ -131,11 +131,11 @@ class Cakes:
 
                 self.bin_cheapest_cakes[year] = year_cake_list_5_cheapest
 
-    async def analyze_bin_prices(self, ctx, ignore_name, responder: Responder):
+    async def analyze_bin_prices(self, responder, ignore_name):
         await self.bin_prices_to_var(responder, ignore_name)
 
         ret_str = ""
-        ret_str += await self.incorrect_download_warning(responder)
+        await self.incorrect_download_warning(responder)
 
         table = TablePrint((5, 5, 30, 8, 20))
         ret_str += table.print_row(["Year", "BINs", "5 cheapest bins", "Cheapest auctioneer"])

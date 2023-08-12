@@ -61,7 +61,7 @@ class Utils:
     async def download_auctions(self, responder: Responder):
         global cake_auctions_json_list
         global cake_auction_list
-        await responder.append("Updating all auctions")
+        await responder.append_header("Updating all auctions")
         for filename in os.listdir('auction'):
             os.remove('auction/' + filename)
 
@@ -69,7 +69,7 @@ class Utils:
         with open(r'auction/0.json', 'wb') as f:
             f.write(r.content)
         number_of_pages = self.get_number_of_pages()
-        await responder.append(f"Downloading {number_of_pages} pages")
+        await responder.append_header(f"Downloading {number_of_pages} pages")
 
         if number_of_pages is None:
             self.logger.warn("number_of_pages is None for some reason, "
@@ -84,7 +84,7 @@ class Utils:
             save_as[url] = r'auction/' + str(page_number) + '.json'
 
         self.download_urls(urls, save_as)
-        await responder.append("Auctions successfully updated")
+        await responder.append_header("Auctions successfully updated")
 
     def is_player_online(self, mc_name):
         try:

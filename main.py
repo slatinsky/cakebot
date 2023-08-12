@@ -1,3 +1,4 @@
+import asyncio
 import os
 from Responder import Responder
 
@@ -11,10 +12,28 @@ import Utils
 from Cakes import Cakes
 from InventoryImporter import InventoryImporter
 from utils import Config
-from utils import LogController
+# from utils import LogController
 
-log_controller = LogController.LogController()
-logger = log_controller.get_logger()
+# log_controller = LogController.LogController()
+# logger = log_controller.get_logger()
+
+
+class Logger():
+    def __init__(self):
+        pass
+
+    def info(self, message):
+        print(message)
+
+    def debug(self, message):
+        print(message)
+    
+    def error(self, message):
+        print(message)
+
+logger = Logger()
+
+
 
 nest_asyncio.apply()
 
@@ -34,11 +53,7 @@ def verify_api_key():
         return False
 
 
-if not verify_api_key():
-    logger.error("Invalid Hypixel API key!")
-    exit()
-else:
-    logger.info("Hypixel API key is valid")
+
 
 
 def get_commit_hash():
@@ -169,15 +184,12 @@ async def bins(interaction, name_to_exclude: str = None):
     """
     if await disallow_execute(interaction):
         return
-    responder = Responder(interaction)
-    await responder.send("Loading...")
-
-    bins_data = await cakes_obj.analyze_bin_prices(interaction, name_to_exclude, responder)
-    bins_msg = Utils.split_message(bins_data)
-    for msg in bins_msg:
-        await interaction.channel.send(f"```diff\n{msg}```")
-
-    await responder.edit("BIN Overview:")
+    
+    with Responder(interaction) as responder:
+        await responder.append_header("Loading...")
+        bins_data = await cakes_obj.analyze_bin_prices(responder, name_to_exclude)
+        await responder.replace_header("BIN Overview:")
+        await responder.append(f"```diff\n{bins_data}\n```")
 
 
 @tree.command()
@@ -235,7 +247,10 @@ async def tb(interaction, mc_name: str):
 
     if mc_name is not None:
         tb_data = await cakes_obj.auctions_ending_soon(responder, None, mc_name)
-        await interaction.edit_original_response(content=f"```diff\n{tb_data}```")
+        await interaction.channel.send(f"```diff\n{tb_data}```")
+        await responder.edit(f"TB data for {mc_name}:")
+    else:
+        await responder.edit("Invalid syntax, use /tb NAME")
 
 
 @tree.command()
@@ -256,6 +271,19 @@ async def version(interaction):
     Get the current version of this bot
     """
     version_embed = discord.Embed(description=VERSION_STRING, title="Bot Version")
+    print("version - 1", flush=True)
+
+    with Responder(interaction) as responder:
+
+        print("version - 2", flush=True)
+        await responder.append("Loading...")
+        print("version - 3", flush=True)
+        await responder.append("Loading...")
+        print("version - 4", flush=True)
+        await responder.append(version_embed)
+
+    print("version - 5", flush=True)
+    
 
     await interaction.response.send_message(embed=version_embed)
 
@@ -306,5 +334,36 @@ async def changelog(interaction):
     await interaction.response.send_message(git_get_commit_messages())
 
 
-# Run the discord bot
-client.run(Config.DISCORD_API_KEY, log_handler=None)
+
+
+async def async_test():
+    r = Responder(None)
+    await r.append("test")
+    await r.append("test2")
+    await r.append("test3")
+    await r.append("""```bash
+ls -la
+
+lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt ut labore et dolore magna aliqua ut enim ad minim veniam quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur excepteur sint occaecat cupidatat non proident sunt in culpa qui officia deserunt mollit anim id est laborum
+lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt ut labore et dolore magna aliqua ut enim ad minim veniam quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur excepteur sint occaecat cupidatat non proident sunt in culpa qui officia deserunt mollit anim id est laborum
+lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt ut labore et dolore magna aliqua ut enim ad minim veniam quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur excepteur sint occaecat cupidatat non proident sunt in culpa qui officia deserunt mollit anim id est laborum
+lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt ut labore et dolore magna aliqua ut enim ad minim veniam quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur excepteur sint occaecat cupidatat non proident sunt in culpa qui officia deserunt mollit anim id est laborum
+lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt ut labore et dolore magna aliqua ut enim ad minim veniam quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur excepteur sint occaecat cupidatat non proident sunt in culpa qui officia deserunt mollit anim id est laborum
+lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt ut labore et dolore magna aliqua ut enim ad minim veniam quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur excepteur sint occaecat cupidatat non proident sunt in culpa qui officia deserunt mollit anim id est laborum
+lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt ut labore et dolore magna aliqua ut enim ad minim veniam quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur excepteur sint occaecat cupidatat non proident sunt in culpa qui officia deserunt mollit anim id est laborum
+lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt ut labore et dolore magna aliqua ut enim ad minim veniam quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur excepteur sint occaecat cupidatat non proident sunt in culpa qui officia deserunt mollit anim id est laborum
+```""")
+    await r.split()
+
+
+if __name__ == "__main__":
+    # asyncio.run(async_test())
+
+    if not verify_api_key():
+        logger.error("Invalid Hypixel API key!")
+        exit()
+    else:
+        logger.info("Hypixel API key is valid")
+
+    # Run the discord bot
+    client.run(Config.DISCORD_API_KEY)
