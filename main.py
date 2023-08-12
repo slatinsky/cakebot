@@ -114,33 +114,14 @@ async def on_ready():  # This function will be run by the discord library when t
     logger.info(f"Bot logged in as {client.user.name}")
 
 
-async def disallow_execute(interaction):
-    deny_author_ids = []  # copy author id from discord
-
-    if interaction.user.id in deny_author_ids:
-        await interaction.response.send_message("You are not allowed to use this bot.", ephemeral=True)
-        return True  # do not allow commands from these users
-
-    if interaction.channel_id not in Config.ALLOWED_CHANNEL_IDS:
-        await interaction.response.send_message("This channel is not allowed for this bot.", ephemeral=True)
-        return True  # not correct channel ID, ignore command
-
-    if interaction.guild is None:
-        await interaction.send("Don't be shy! Talk with me in bot-channel!")
-        return True
-    else:
-        return False
-
-
 @tree.command(name="col")
 async def col(interaction, mc_name: str):
     """
     Displays information over specific player
     """
-    if await disallow_execute(interaction):
-        return True
-
-    await InventoryImporter().offer_cakes(mc_name, interaction)
+    with Responder(interaction) as responder:
+        await responder.disallow_execute_check()
+        await InventoryImporter().offer_cakes(mc_name, interaction)
 
 
 @tree.command()
@@ -149,12 +130,10 @@ async def top(interaction):
     Shows current top bidder leaderboard
     and players who currently sell the most amount of cakes in AH
     """
-    if await disallow_execute(interaction):
-        return
-    
-    responder = Responder(interaction)
-    await responder.send("Loading...")
-    await responder.edit(content=cakes_obj.top(responder))
+    with Responder(interaction) as responder:
+        await responder.disallow_execute_check()
+        await responder.send("Loading...")
+        await responder.edit(content=cakes_obj.top(responder))
 
 
 @tree.command()
@@ -162,15 +141,14 @@ async def undercuts(interaction, mc_name: str):
     """
     See auctions where given player was undercut
     """
-    if await disallow_execute(interaction):
-        return
+    with Responder(interaction) as responder:
+        await responder.disallow_execute_check()
+        if mc_name is not None:
+            await interaction.response.send_message("Loading...")
 
-    if mc_name is not None:
-        await interaction.response.send_message("Loading...")
+            response_msg = await cakes_obj.analyze_undercuts(interaction, mc_name)
 
-        response_msg = await cakes_obj.analyze_undercuts(interaction, mc_name)
-
-        await interaction.edit_original_response(content=response_msg)
+            await interaction.edit_original_response(content=response_msg)
 
 
 @tree.command(name="bins")
@@ -178,10 +156,8 @@ async def bins(interaction, name_to_exclude: str = None):
     """
     Analysed current bin prices and show 5 cheapest bins
     """
-    if await disallow_execute(interaction):
-        return
-    
     with Responder(interaction) as responder:
+        await responder.disallow_execute_check()
         await responder.append_header("Loading...")
         bins_data = await cakes_obj.analyze_bin_prices(responder, name_to_exclude)
         await responder.replace_header("BIN Overview:")
@@ -193,18 +169,16 @@ async def soon(interaction):
     """
     Show all cake auctions that are ending soon
     """
-    if await disallow_execute(interaction):
-        return
+    with Responder(interaction) as responder:
+        await responder.disallow_execute_check()
+        await responder.send("Loading...")
 
-    responder = Responder(interaction)
-    await responder.send("Loading...")
-
-    soon_data = await cakes_obj.auctions_ending_soon(responder)
-    soon_msg = Utils.split_message(msg=soon_data)
-    await interaction.edit_original_response(content=f"```diff\n{soon_msg[0]}```")
-    soon_msg.pop(0)
-    for msg in soon_msg:
-        await interaction.channel.send(f"```diff\n{msg}```")
+        soon_data = await cakes_obj.auctions_ending_soon(responder)
+        soon_msg = Utils.split_message(msg=soon_data)
+        await interaction.edit_original_response(content=f"```diff\n{soon_msg[0]}```")
+        soon_msg.pop(0)
+        for msg in soon_msg:
+            await interaction.channel.send(f"```diff\n{msg}```")
 
 
 @tree.command()
@@ -212,22 +186,20 @@ async def ah(interaction, mc_name: str):
     """
     Show Cake Auctions for given player name
     """
-    if await disallow_execute(interaction):
-        return
     
-    responder = Responder(interaction)
+    with Responder(interaction) as responder:
+        await responder.disallow_execute_check()
+        if mc_name is not None:
+            await responder.send("Loading...")
+            ah_data = await cakes_obj.auctions_ending_soon(responder, mc_name)
+            ah_msgs = Utils.split_message(ah_data)
+            print(ah_msgs)
+            for msg in ah_msgs:
+                await interaction.channel.send(f"```diff\n{msg}```")
+            await interaction.edit_original_response(content=f"AH data for {mc_name}:")
 
-    if mc_name is not None:
-        await responder.send("Loading...")
-        ah_data = await cakes_obj.auctions_ending_soon(responder, mc_name)
-        ah_msgs = Utils.split_message(ah_data)
-        print(ah_msgs)
-        for msg in ah_msgs:
-            await interaction.channel.send(f"```diff\n{msg}```")
-        await interaction.edit_original_response(content=f"AH data for {mc_name}:")
-
-    else:
-        await responder.send("Invalid syntax, use /ah NAME")
+        else:
+            await responder.send("Invalid syntax, use /ah NAME")
 
 
 @tree.command()
@@ -235,18 +207,17 @@ async def tb(interaction, mc_name: str):
     """
     Show auctions where given player is top bidder
     """
-    if await disallow_execute(interaction):
-        return
-    
-    responder = Responder(interaction)
-    await responder.send("Loading...")
+        
+    with Responder(interaction) as responder:
+        await responder.disallow_execute_check()
+        await responder.send("Loading...")
 
-    if mc_name is not None:
-        tb_data = await cakes_obj.auctions_ending_soon(responder, None, mc_name)
-        await interaction.channel.send(f"```diff\n{tb_data}```")
-        await responder.edit(f"TB data for {mc_name}:")
-    else:
-        await responder.edit("Invalid syntax, use /tb NAME")
+        if mc_name is not None:
+            tb_data = await cakes_obj.auctions_ending_soon(responder, None, mc_name)
+            await interaction.channel.send(f"```diff\n{tb_data}```")
+            await responder.edit(f"TB data for {mc_name}:")
+        else:
+            await responder.edit("Invalid syntax, use /tb NAME")
 
 
 @tree.command()
@@ -254,11 +225,10 @@ async def delcache(interaction):
     """
     Used to refresh cached mc names
     """
-    if await disallow_execute(interaction):
-        return
-
-    Utils.delete_database()
-    await interaction.response.send_message(f"Deleted mcnames database")
+    with Responder(interaction) as responder:
+        await responder.disallow_execute_check()
+        Utils.delete_database()
+        await interaction.response.send_message(f"Deleted mcnames database")
 
 
 @tree.command()
@@ -266,8 +236,10 @@ async def version(interaction):
     """
     Get the current version of this bot
     """
-    version_embed = discord.Embed(description=VERSION_STRING, title="Bot Version")
-    await interaction.response.send_message(embed=version_embed)
+    with Responder(interaction) as responder:
+        await responder.disallow_execute_check()
+        version_embed = discord.Embed(description=VERSION_STRING, title="Bot Version")
+        await interaction.response.send_message(embed=version_embed)
 
 
 @tree.command()
@@ -275,19 +247,18 @@ async def info(interaction):
     """
     See what this bot is able to do and how
     """
-    if await disallow_execute(interaction):
-        return
+    with Responder(interaction) as responder:
+        await responder.disallow_execute_check()
+        deprecation_message = f"""
+    This cake bot is deprecated. That means, that I (Slada) am not playing the game anymore and I can't improve the bot. I will try to keep the bot online and do small bug fixes. I promise, that the bot will stay online at least till 2022-01-01.
 
-    deprecation_message = f"""
-This cake bot is deprecated. That means, that I (Slada) am not playing the game anymore and I can't improve the bot. I will try to keep the bot online and do small bug fixes. I promise, that the bot will stay online at least till 2022-01-01.
+    Turquoise_Fish sadly isn't working on a replacement bot :(
 
-Turquoise_Fish sadly isn't working on a replacement bot :(
+    The bot is currently maintained and worked on by <@188690150975471616>, for any questions/improvements message/ping me!
+    """
+        deprecation_embed = discord.Embed(description=deprecation_message, title="Status of this bot")
 
-The bot is currently maintained and worked on by <@188690150975471616>, for any questions/improvements message/ping me!
-"""
-    deprecation_embed = discord.Embed(description=deprecation_message, title="Status of this bot")
-
-    commands_message = f"""Available commands:
+        commands_message = f"""Available commands:
 ```
 /ah NAME
 /tb NAME
@@ -300,9 +271,8 @@ The bot is currently maintained and worked on by <@188690150975471616>, for any 
 /undercuts NAME
 ```
 """
-    commands_embed = discord.Embed(description=commands_message, title="Commands")
-
-    await interaction.response.send_message(embeds=[deprecation_embed, commands_embed])
+        commands_embed = discord.Embed(description=commands_message, title="Commands")
+        await interaction.response.send_message(embeds=[deprecation_embed, commands_embed])
 
 
 @tree.command()
@@ -310,10 +280,8 @@ async def changelog(interaction):
     """
     See what has changed in this bot latest
     """
-    if await disallow_execute(interaction):
-        return
-    
     with Responder(interaction) as responder:
+        await responder.disallow_execute_check()
         await responder.append("last 10 commits:\n" + git_get_commit_messages())
 
 

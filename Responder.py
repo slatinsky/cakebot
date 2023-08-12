@@ -1,3 +1,5 @@
+from utils import Config
+
 class Responder:
     def __init__(self, interaction):
         self.interaction = interaction
@@ -11,6 +13,26 @@ class Responder:
     
     def __exit__(self, exc_type, exc_value, traceback):
         pass
+
+    async def disallow_execute_check(self):
+        """
+        raises an exception if the command should not be executed
+        do not catch this exception if you want to stop the command from executing
+        """
+        deny_author_ids = []  # copy author id from discord
+
+        if self.interaction.user.id in deny_author_ids:
+            await self.interaction.response.send_message("You are not allowed to use this bot.", ephemeral=True)
+            raise Exception("User not allowed to use bot.")  # do not allow commands from these users
+
+        if self.interaction.channel_id not in Config.ALLOWED_CHANNEL_IDS:
+            await self.interaction.response.send_message("This channel is not allowed for this bot.", ephemeral=True)
+            raise Exception("Wrong channel ID.")  # not correct channel ID, ignore command
+
+        if self.interaction.guild is None:
+            await self.interaction.send("Don't be shy! Talk with me in bot-channel!")
+            raise Exception("Wrong channel ID - dm.")  # not correct channel ID, ignore command
+
 
     async def split(self, rows: list[str]) -> list[str]:
         """
@@ -50,6 +72,10 @@ class Responder:
         return messages
     
     async def render(self, rows):
+        """
+        compares the new messages with the previously messages and edits the changed ones
+        deletes excess messages
+        """
         split_messages = await self.split(rows)
 
         # print(split_messages, flush=True)
@@ -94,21 +120,25 @@ class Responder:
             del self.msg_references[i-1]
             del self.msg_previous_content[i-1]
         
-
-
-
-            
     async def append(self, message: str):
+        """
+        appends a message to the end of the current message
+        """
         self.rows += message.split('\n')
         await self.render(self.header_rows + self.rows)
 
     async def append_header(self, message: str):
+        """
+        appends a message to the end of the current header message
+        useful for temporary logs
+        """
         self.header_rows += message.split('\n')
         await self.render(self.header_rows + self.rows)
 
     async def replace_header(self, message: str):
+        """
+        replaces the current header message
+        useful for clearing temporary logs after they are no longer needed
+        """
         self.header_rows = [message]
         await self.render(self.header_rows + self.rows)
-            
-        # self.msg_content += message + '\n'
-        # return await self.interaction.edit_original_response(content=self.msg_content)
