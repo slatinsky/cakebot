@@ -23,13 +23,16 @@ class Logger():
         pass
 
     def info(self, message):
-        print(message)
+        print(message, flush=True)
 
     def debug(self, message):
-        print(message)
+        print(message, flush=True)
+
+    def warn(self, message):
+        print(message, flush=True)
     
     def error(self, message):
-        print(message)
+        print(message, flush=True)
 
 logger = Logger()
 
@@ -132,8 +135,10 @@ async def top(interaction):
     """
     with Responder(interaction) as responder:
         await responder.disallow_execute_check()
-        await responder.send("Loading...")
-        await responder.edit(content=cakes_obj.top(responder))
+        await responder.append_header("Loading...")
+        ttop = await cakes_obj.top(responder)
+        await responder.replace_header("Top auctioneers:")
+        await responder.append(ttop)
 
 
 @tree.command()
@@ -144,11 +149,10 @@ async def undercuts(interaction, mc_name: str):
     with Responder(interaction) as responder:
         await responder.disallow_execute_check()
         if mc_name is not None:
-            await interaction.response.send_message("Loading...")
-
-            response_msg = await cakes_obj.analyze_undercuts(interaction, mc_name)
-
-            await interaction.edit_original_response(content=response_msg)
+            await responder.append_header("Loading...")
+            response_msg = await cakes_obj.analyze_undercuts(responder, mc_name)
+            await responder.replace_header(f"Undercuts for {mc_name}:")
+            await responder.append(f"```diff\n{response_msg}\n```")
 
 
 @tree.command(name="bins")
@@ -171,14 +175,10 @@ async def soon(interaction):
     """
     with Responder(interaction) as responder:
         await responder.disallow_execute_check()
-        await responder.send("Loading...")
-
+        await responder.append_header("Loading...")
         soon_data = await cakes_obj.auctions_ending_soon(responder)
-        soon_msg = Utils.split_message(msg=soon_data)
-        await interaction.edit_original_response(content=f"```diff\n{soon_msg[0]}```")
-        soon_msg.pop(0)
-        for msg in soon_msg:
-            await interaction.channel.send(f"```diff\n{msg}```")
+        await responder.replace_header("Auctions ending soon:")
+        await responder.append(f"```diff\n{soon_data}```")
 
 
 @tree.command()
@@ -190,13 +190,10 @@ async def ah(interaction, mc_name: str):
     with Responder(interaction) as responder:
         await responder.disallow_execute_check()
         if mc_name is not None:
-            await responder.send("Loading...")
+            await responder.append_header("Loading...")
             ah_data = await cakes_obj.auctions_ending_soon(responder, mc_name)
-            ah_msgs = Utils.split_message(ah_data)
-            print(ah_msgs)
-            for msg in ah_msgs:
-                await interaction.channel.send(f"```diff\n{msg}```")
-            await interaction.edit_original_response(content=f"AH data for {mc_name}:")
+            await responder.replace_header(f"AH data for {mc_name}:")
+            await responder.append(f"```diff\n{ah_data}```")
 
         else:
             await responder.send("Invalid syntax, use /ah NAME")
@@ -210,14 +207,14 @@ async def tb(interaction, mc_name: str):
         
     with Responder(interaction) as responder:
         await responder.disallow_execute_check()
-        await responder.send("Loading...")
+        await responder.append_header("Loading...")
 
         if mc_name is not None:
             tb_data = await cakes_obj.auctions_ending_soon(responder, None, mc_name)
-            await interaction.channel.send(f"```diff\n{tb_data}```")
-            await responder.edit(f"TB data for {mc_name}:")
+            await responder.replace_header(f"Top bidder overview for {mc_name}:")
+            await responder.append(f"```diff\n{tb_data}```")
         else:
-            await responder.edit("Invalid syntax, use /tb NAME")
+            await responder.replace_header("Invalid syntax, use /tb NAME")
 
 
 @tree.command()
@@ -228,7 +225,7 @@ async def delcache(interaction):
     with Responder(interaction) as responder:
         await responder.disallow_execute_check()
         Utils.delete_database()
-        await interaction.response.send_message(f"Deleted mcnames database")
+        await responder.append("Deleted mcnames database - minecraft names will be fresh again")
 
 
 @tree.command()
@@ -250,11 +247,7 @@ async def info(interaction):
     with Responder(interaction) as responder:
         await responder.disallow_execute_check()
         deprecation_message = f"""
-    This cake bot is deprecated. That means, that I (Slada) am not playing the game anymore and I can't improve the bot. I will try to keep the bot online and do small bug fixes. I promise, that the bot will stay online at least till 2022-01-01.
-
-    Turquoise_Fish sadly isn't working on a replacement bot :(
-
-    The bot is currently maintained and worked on by <@188690150975471616>, for any questions/improvements message/ping me!
+The bot is currently maintained and worked on by <@188690150975471616> and <@434468647994523650>, for any questions/improvements message/ping us!
     """
         deprecation_embed = discord.Embed(description=deprecation_message, title="Status of this bot")
 

@@ -151,13 +151,13 @@ class Cakes:
 
         return ret_str
 
-    async def analyze_undercuts(self, ctx, name):
+    async def analyze_undercuts(self, responder, name):
         name_uuid = self.utils.get_uuid_from_mc_name(name)
         if name_uuid is None:
             return f"Could not get player from name {name}"
 
         ret_str = ""
-        self.bin_prices_to_var(name)
+        await self.bin_prices_to_var(responder, name)
 
         name_owned_cakes = {}
         name_best_offers = {}
@@ -290,8 +290,10 @@ class Cakes:
 
         return ret_str
 
-    def top(self, responder: Responder):
+    async def top(self, responder: Responder):
         ret_str = ""
+        
+        await self.bin_prices_to_var(responder)
 
         top_bidders_uuid = {}
         top_auctioneers_uuid = {}

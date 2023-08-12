@@ -88,10 +88,17 @@ class Utils:
 
     def is_player_online(self, mc_name):
         try:
+            print("is_player_online - mc_name: ", mc_name, flush=True)
             mc_uuid = self.get_uuid_from_mc_name(mc_name)
         except json.decoder.JSONDecodeError:
             self.logger.debug(f"is_player_online - name changed, old name: {mc_name}")
             return "name_not_found_or_changed"
+        
+        if mc_uuid == 429:
+            return "429_api_limit_reached"
+
+        if mc_uuid is None:
+            return "mc_uuid not found"
 
         url = 'https://api.hypixel.net/player?key=' + Config.API_KEY + '&uuid=' + mc_uuid
 
@@ -115,13 +122,26 @@ class Utils:
             return False
 
     def get_uuid_from_mc_name(self, name):
+        """
+        get uuid from minecraft name
+        returns 429 if api limit is reached
+        returns None if name is not found
+        return uuid if name is found
+        """
         url = 'https://api.mojang.com/users/profiles/minecraft/' + name
-        data = requests.get(url=url).json()
+        response = requests.get(url=url)
+        data = response.json()
 
+        if response.status_code == 429:
+            print("get_uuid_from_mc_name - API LIMIT REACHED", flush=True)
+            return 429
+
+        # print("get_uuid_from_mc_name - status: ", response.status_code, flush=True)
         if 'id' in data:
+            # print("get_uuid_from_mc_name - data: ", data, flush=True)
             return data['id']
         else:
-            self.logger.warn(f"Could not retrieve UUID from player name '{name}': {data['errorMessage']}")
+            self.logger.warn(f"Could not retrieve UUID from player name '{name}': {data}")
             return None
 
     # api limit 600 per 10 minutes = 1 per sec
