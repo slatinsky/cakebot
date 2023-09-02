@@ -227,6 +227,7 @@ class InventoryImporter:
 
         if not inventories:
             inventory_embed.description += "This player does not have his inventory api enabled"
+            raise Exception("This player does not have his inventory api enabled")
             return
 
         cake_list = self.find_cakes_in_item_list(self.list_of_all_items_in_inventories(inventories))
@@ -297,7 +298,11 @@ class InventoryImporter:
             # 	return f"This player does not have his inventory api enabled\n"
             # else:
             if 'current_profile_uuid' in stats:
-                inventory_embed, pie_str = self.get_inventory_details(mc_uuid, stats['current_profile_uuid'])
+                try:
+                    inventory_embed, pie_str = self.get_inventory_details(mc_uuid, stats['current_profile_uuid'])
+                except Exception as e:
+                    await interaction.edit_original_response(content=f"Error: {e}")
+                    return
 
             await interaction.edit_original_response(embeds=[stats_embed, ah_embed, inventory_embed], content="")
 
